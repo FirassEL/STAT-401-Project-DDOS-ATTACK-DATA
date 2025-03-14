@@ -1,0 +1,33 @@
+---
+title: "DDOS Project EDA"
+author: "Firass Elhouat"
+date: "2025-03-14"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+# --- loading libraries 
+library(tidyverse)
+library(janitor) # for column name cleaning 
+
+```
+## 
+
+```{r}
+# ---- loading data 
+DDoS_dataset <- read_csv("DDoS_dataset.csv") %>% clean_names()
+
+# view data 
+print(DDoS_dataset)
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+
+```
