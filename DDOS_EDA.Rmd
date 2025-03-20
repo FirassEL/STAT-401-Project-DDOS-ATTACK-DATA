@@ -19,214 +19,222 @@ The PlayStation Network attack highlighted the long-term effects of DDoS attack,
 
 To better understand and model DDoS attacks, we will be utilizing a publicly available dataset from [Kaggle](https://www.kaggle.com/datasets/aymenabb/ddos-evaluation-dataset-cic-ddos2019/data){.uri}. This dataset contains extensive network traffic data, including packet details, communication protocols, and attack indicators. By applying Exploratory Data Analysis (EDA), we aim to identify patterns that distinguish normal traffic from malicious DDoS activity. Through this analysis, we aim to develop a predictive model that can detect potential DDoS threats in real time, helping us fully understand how these attacks occur, and what are some possible mitigation efforts that can be implemented to reduce the significant effects, and how each variable in our dataset explains our target variable.
 
-## 2. Dataset
+## **2. Dataset**
 
-To better understand and model DDoS attacks, we will use the CIC-DDoS2019 dataset contains 225,745 rows, and 85 various variables that help differentiate between normal and attack-related traffic. The dataset includes attributes such as:
+To better understand and model DDoS attacks, we will use the CIC-DDoS2019 dataset that was generated using a [CICFlowMeter-V3](https://www.unb.ca/cic/research/applications.html#CICFlowMeter) which contains 225,745 rows, and 85 various variables that help differentiate between normal and attack-related traffic. The dataset includes these defined attributes/variables:
 
--   Identifier and date variables: These are most likely to be dropped as they are not useful during the modeling phase of our project.
+-   **Identifier and date variables:** These are most likely to be dropped as they are not useful during the modeling phase of our project.
 
-    -   flow_id
+    -   **flow_id**
 
-    -   source_ip
+    -   **source_ip**
 
-    -   source_port
+    -   **source_port**
 
-    -   destination_ip
+    -   **destination_ip**
 
-    -   destination_port
+    -   **destination_port**
 
-    -   Time stamp
+    -   **Time stamp**
 
--   Categorical Variables:
+-   **Categorical Variables:**
 
-    -   **protocol:**
+    -   **protocol: Denotes the protocol used,** with three levels; **0, 6 and 17**
 
--   Continuous Variables:
+-   **Continuous Variables:**
 
-    -   **flow_duration:**
+    -   **flow_duration:** The duration of the flow in microseconds.
 
-    -   **total_fwd_packets:**
+    -   **total_fwd_packets:** The total packets in the forward direction.
 
-    -   **total_backward_packets:**
+    -   **total_backward_packets:** The total packets in the backward direction.
 
-    -   **total_length_of_fwd_packets:**
+    -   **total_length_of_fwd_packets:** The total size of a packet in the forward direction.
 
-    -   **total_length_of_bwd_packets:**
+    -   **total_length_of_bwd_packets:** The total size of a packet in the backward direction.
 
-    -   FWD PACKET LENGTH:
+    -   **Forward (FWD) Packet Length Metrics:**
 
-        -   **fwd_packet_length_max:**
+        -   **fwd_packet_length_max:** The maximum size of a packet in the forward direction.
 
-        -   **fwd_packet_length_min:**
+        -   **fwd_packet_length_min:** The minimum size of a packet in the forward direction.
 
-        -   **fwd_packet_length_mean:**
+        -   **fwd_packet_length_mean:** The mean size of a packet in the forward direction.
 
-        -   **fwd_packet_length_std:**
+        -   **fwd_packet_length_std:** The Standard deviation size of a packet in the forward direction.
 
-    -   BWD PACKET LENGTH:
+    -   **Backward (BWD) Packet Length Metrics:**
 
-        -   **bwd_packet_length_max:**
+        -   **bwd_packet_length_max:** The maximum size of a packet in the backward direction.
 
-        -   **bwd_packet_length_min:**
+        -   **bwd_packet_length_min:** The minimum size of a packet in the backward direction.
 
-        -   **bwd_packet_length_mean:**
+        -   **bwd_packet_length_mean:** The mean size of a packet in the backward direction.
 
-        -   **bwd_packet_length_std:**
+        -   **bwd_packet_length_std:** The standard deviation size of a packet in the backward direction.
 
-    -   **flow_bytes_s:**
+    -   **flow_bytes_s:** The number of flow bytes per second.
 
-    -   **flow_packets_s:**
+    -   **flow_packets_s:** The number of flow packets per second.
 
-    -   Flow IAT:
+    -   **Flow Inter-Arrival Time (IAT) Metrics:**
 
-        -   **flow_iat_mean:**
+        -   **flow_iat_mean:** The average inter-arrival time between packets within a flow.
 
-        -   **flow_iat_std:**
+        -   **flow_iat_std:** The standard deviation inter-arrival time between packets within a flow.
 
-        -   **flow_iat_max:**
+        -   **flow_iat_max:** The maximum inter-arrival time between packets within a flow.
 
-        -   **flow_iat_min:**
+        -   **flow_iat_min:** The minimum inter-arrival time between packets within a flow.
 
-    -   FWD IAT:
+    -   **Forward (FWD) Inter-Arrival Time (IAT) Metrics:**
 
-        -   **fwd_iat_total:**
+        -   **fwd_iat_total:** The total inter-arrival time between packets sent in the forward direction.
 
-        -   **fwd_iat_mean:**
+        -   **fwd_iat_mean:** The average inter-arrival time between packets sent in the forward direction.
 
-        -   **fwd_iat_std:**
+        -   **fwd_iat_std:** The standard deviation inter-arrival time between packets sent in the forward direction.
 
-        -   **fwd_iat_max:**
+        -   **fwd_iat_max:** The maximum inter-arrival time between packets sent in the forward direction.
 
-        -   **fwd_iat_min:**
+        -   **fwd_iat_min:** The minimum inter-arrival time between packets sent in the forward direction.
 
-    -   BWD IAT:
+    -   **Backward (BWD) Inter-Arrival Time (IAT) Metrics:**
 
-        -   **bwd_iat_total:**
+        -   **bwd_iat_total:** The total inter-arrival time between packets sent in the forward direction.
 
-        -   **bwd_iat_mean:**
+        -   **bwd_iat_mean:** The average inter-arrival time between packets sent in the forward direction.
 
-        -   **bwd_iat_std:**
+        -   **bwd_iat_std:** The standard deviation inter-arrival time between packets sent in the forward. direction.
 
-        -   **bwd_iat_max:**
+        -   **bwd_iat_max:** The maximum inter-arrival time between packets sent in the forward direction.
 
-        -   **bwd_iat_min:**
+        -   **bwd_iat_min:** The minimum inter-arrival time between packets sent in the forward direction.
 
-    -   **fwd_psh_flags:**
+    -   **fwd_psh_flags:** Number of time the PSH (Push) flag was set in packets travelling in the forward direction.
 
-    -   **bwd_psh_flags:**
+    -   **bwd_psh_flags:** Number of time the PSH (Push) flag was set in packets travelling in the backward direction.
 
-    -   **fwd_urg_flags:**
+    -   **fwd_urg_flags:** Number of time the URG (Urgent) flag was set in packets travelling in the forward direction.
 
-    -   bwd_urg_flags:
+    -   bwd_urg_flags: Number of time the URG (Urgent) flag was set in packets travelling in the forward direction.
 
-    -   **fwd_header_length_41:**
+    -   **fwd_header_length_41:** The total bytes used for headers in the forward direction.
 
-    -   **bwd_header_length:**
+    -   **bwd_header_length:** The total bytes used for headers in the backward direction.
 
-    -   **fwd_packets_s:**
+    -   **fwd_packets_s:** Number of forward packets transmitted per second.
 
-    -   **bwd_packets_s:**
+    -   **bwd_packets_s:** Number of backward packets transmitted per second.
 
-    -   PACKET LENGTH
+    -   **Packet Length Metrics:**
 
-        -   **min_packet_length:**
+        -   **min_packet_length:** The minimum length of a packet.
 
-        -   **max_packet_length:**
+        -   **max_packet_length:** The maximum length of a packet.
 
-        -   **packet_length_mean:**
+        -   **packet_length_mean:** The average length of a packet.
 
-        -   **packet_length_std:**
+        -   **packet_length_std:** The standard deviation length of a packet.
 
-        -   **packet_length_variance:**
+        -   **packet_length_variance:** The variance length of a packet.
 
-    -   **fin_flag_count:**
+    -   **fin_flag_count:** The number of packets with FIN (Finish) flag, which signals the termination of a connection.
 
-    -   **syn_flag_count:**
+    -   **syn_flag_count:** The number of packets with SYN (Synchronize) flag, used to initiate a TCP connection.
 
-    -   **rst_flag_count:**
+    -   **rst_flag_count:** The number of packets with RST (Reset) flag, used to abruptly terminate a connection.
 
-    -   **psh_flag_count:**
+    -   **psh_flag_count:** The number of packets with PSH (Push) flag, which tells the receiver to process data immediately rather than buffering it.
 
-    -   **ack_flag_count:**
+    -   **ack_flag_count:** The number of packets with ACK (Acknowledgment) flag, which confirms the receipt data.
 
-    -   **urg_flag_count:**
+    -   **urg_flag_count:** The number of packets with URG (Urgent) flag, indicating that certain data should be processed immediately.
 
-    -   **cwe_flag_count:**
+    -   **cwe_flag_count:** Will be renamed to correct name : CWR (Congestion window reduced) flag, used in TCP congestion control to signal a reduced congestion window.
 
-    -   **ece_flag_count:**
+    -   **ece_flag_count:** The number of packets with ECE (Explicit Congestion Notification Eco) flag, indicates network congestion.
 
-    -   **down_up_ratio:**
+    -   **down_up_ratio:** Download and upload ratio.
 
-    -   **average_packet_size:**
+    -   **average_packet_size:** The average size of a packet.
 
-    -   **avg_fwd_segment_size:**
+    -   **avg_fwd_segment_size:** The average size of data segments in the forward direction.
 
-    -   **avg_bwd_segment_size:**
+    -   **avg_bwd_segment_size:** The average size of data segments in the backward direction.
 
-    -   **fwd_header_length_62:**
+    -   **fwd_header_length_62:** Length of a packet header in the forward direction.
 
-    -   **fwd_avg_bytes_bulk:**
+    -   **fwd_avg_bytes_bulk:** Average number of bulk bytes rate in the forward direction.
 
-    -   **fwd_avg_packets_bulk:**
+    -   **fwd_avg_packets_bulk:** Average number of bulk packets rate in the forward direction.
 
-    -   **fwd_avg_bulk_rate:**
+    -   **fwd_avg_bulk_rate:** Average number of bulk rate in the forward direction.
 
-    -   **bwd_avg_bytes_bulk:**
+    -   **bwd_avg_bytes_bulk:** Average number of bulk bytes rate in the backward direction.
 
-    -   **bwd_avg_packets_bulk:**
+    -   **bwd_avg_packets_bulk:** Average number of bulk packets rate in the backward direction.
 
-    -   **bwd_avg_bulk_rate:**
+    -   **bwd_avg_bulk_rate:** Average number of bulk rate in the backward direction.
 
-    -   **subflow_fwd_packets:**
+    -   **subflow_fwd_packets:** The average number of packets in a sub flow in the forward direction.
 
-    -   **subflow_fwd_bytes:**
+    -   **subflow_fwd_bytes:** The average number of bytes in a sub flow in the forward direction.
 
-    -   **subflow_bwd_packets:**
+    -   **subflow_bwd_packets:** The average number of packets in a sub flow in the backward direction.
 
-    -   **subflow_bwd_bytes:**
+    -   **subflow_bwd_bytes:** The average number of bytes in a sub flow in the backward direction.
 
-    -   **init_win_bytes_forward:**
+    -   **init_win_bytes_forward:** The total number of bytes sent in initial window in the forward direction.
 
-    -   **init_win_bytes_backward:**
+    -   **init_win_bytes_backward:** The total number of bytes sent in initial window in the **backward** direction.
 
-    -   **act_data_pkt_fwd:**
+    -   **act_data_pkt_fwd:** Actual number of packets sent in the forward direction.
 
-    -   **min_seg_size_forward:**
+    -   **min_seg_size_forward:** Minimum size of the data segment sent in the forward direction.
 
-    -   ACTIVE:
+    -   **Active Metrics :**
 
-        -   **active_mean:**
+        -   **active_mean:** The average time a flow was active before becoming idle.
 
-        -   **active_std:**
+        -   **active_std:** The standard deviation time a flow was active before becoming idle.
 
-        -   **active_max:**
+        -   **active_max:** The maximum time a flow was active before becoming idle.
 
-        -   **active_min:**
+        -   **active_min:** The minimum time a flow was active before becoming idle.
+
+    -   
 
     ```{=html}
     <!-- -->
     ```
-    -   IDLE:
+    -   **IDLE Metrics:**
 
-        -   **idle_mean:**
+        -   **idle_mean:** The average time a flow was idle before becoming active.
 
-        -   **idle_std:**
+        -   **idle_std:** The standard deviation time a flow was idle before becoming active.
 
-        -   **idle_max:**
+        -   **idle_max:** The maximum time a flow was idle before becoming active.
 
-        -   **idle_min:**
+        -   **idle_min:** The minimum time a flow was idle before becoming active.
 
     -   
 
--   Response Variable:
+-   **Response Variable:**
 
-    -    label:
+    -    **label:**
+
+        -   **BENIGN:** Normal legitimate network traffic
+
+        -   **DDoS:** Malicious network traffic.
 
 ```{r setup, include=FALSE}
 # --- loading libraries 
 library(tidyverse) # for extra functions 
 library(janitor) # for column name cleaning 
-library(viridis) # for color palettes
+library(viridis) # for color palettes 
+library(corrplot) # for correlation plot 
+library(ggnewscale) # for plots 
 
 ```
 
@@ -242,7 +250,7 @@ print(DDoS_dataset)
 
 ```{r}
 # unique Values
-length(unique(DDoS_dataset$timestamp))
+length(unique(DDoS_dataset$label))
 length(unique(DDoS_dataset$fwd_header_length))
 
 # remove unique ID columns 
@@ -267,14 +275,17 @@ Remove unique ID columns
 
 ```{r}
 # --- remove unwanted variables 
-
+DDoS_dataset <- DDoS_dataset %>%
+  select(-flow_id, -source_ip, 
+         -source_port, -destination_ip, 
+         -destination_port, -timestamp)
 ```
 
 Checking and removing null rows
 
 ```{r}
 # --- check for null values 
-
+sum(is.na(DDoS_dataset))
 ```
 
 ## 4. Data Analysis 
@@ -284,8 +295,46 @@ Checking and removing null rows
 In this section, creating a correlation matrix
 
 ```{r}
+# 
+DDoS_dataset <- DDoS_dataset %>%
+  mutate(label = recode(label, "DDoS" = 1, "BENIGN" = 0))
+
+# assigning columns as numeric 
+DDoS_dataset <- DDoS_dataset %>%
+  mutate(across(-c(1, 79), as.numeric))
+
+# Select the columns: 1 to 40 and 79
+DDoS_dataset %>%
+  select(1:40, 79) %>%  # Select columns 1 to 39 and column 79
+  select(which(sapply(., sd) != 0)) %>%
+  cor() %>% corrplot(method = "color", 
+        tl.cex = 0.5, 
+         number.cex = 0.5,
+         tl.srt = 45,
+          tl.col = "black",
+         order = "hclust",
+         addCoef.col = "black",  # Display correlation values
+           number.digits = 1)
+```
+
+```{r}
+# Select the columns: 41 to 79
+DDoS_dataset %>%
+  select(41:79) %>%  # Select columns 1 to 39 and column 79
+  select(which(sapply(., sd) != 0)) %>%
+  cor() %>% corrplot(method = "color", 
+         tl.cex = 0.5, 
+         number.cex = 0.5,
+         tl.srt = 45,
+          tl.col = "black",
+         order = "hclust",
+         addCoef.col = "black",  # Display correlation values
+           number.digits = 1)
 
 ```
+
+
+
 
 ### 4.2 Data Viz 
 
@@ -294,21 +343,30 @@ In this section, creating a correlation matrix
 
 # bar plot of target distribution  
 ggplot(DDoS_dataset, aes(x = as.factor(label))) +
-  geom_bar(aes(fill = as.factor(label)), color = "black") +
+  geom_bar(aes(fill = as.factor(label)), color = "black", alpha = 0.8, linewidth = 0.3) +
   labs(title = "Distribution of DDoS Attack Labels", x = "", y = "Count") +
   theme_minimal() +
-  scale_fill_viridis(discrete = TRUE,option = "cividis", direction = -1) +  # Using the Viridis color palette
+  scale_fill_manual(values = c("0" = "blue", "1" = "red"), 
+                    labels = c("0" = "BENIGN", "1" = "DDoS"),
+                    guide = guide_legend(title = NULL)) +  # Remove legend title
   scale_y_continuous(labels = scales::comma)
 
+
+```
+
+
+```{r}
 table(DDoS_dataset$label, DDoS_dataset$protocol)
 
 
 # bar plot of target and protocol distribution
 ggplot(DDoS_dataset, aes(x = as.factor(protocol), fill = as.factor(label))) +
-  geom_bar(color = "black") +
-  labs(title = "Distribution of DDoS Attack Labels by Protocol", x = "", y = "Count") +
+  geom_bar(color = "black", alpha = 0.8, linewidth = 0.3) +
+  labs(title = "Distribution of DDoS Attack Labels by Protocol", x = "Protocol", y = "Count") +
   theme_minimal() +
-  scale_fill_viridis(discrete = TRUE, option = "cividis", direction = -1) +
+  scale_fill_manual(values = c("0" = "blue", "1" = "red"), 
+                    labels = c("0" = "BENIGN", "1" = "DDoS"),
+                    guide = guide_legend(title = NULL)) +
   scale_y_continuous(labels = scales::comma)
 
 # Issues protocol variable 
@@ -316,7 +374,73 @@ ggplot(DDoS_dataset, aes(x = as.factor(protocol), fill = as.factor(label))) +
 # When "6", BENIGN is 64793, while DDoS is 128027. 
 # When "17", BENIGN is 32871, while DDoS is 0. 
 
-# Highly correleted with BENIGN, especially when the value is 0 or 17. 
+```
+
+```{r}
+ggplot() + 
+  geom_point(data = DDoS_dataset[DDoS_dataset$label == 0, ], 
+             aes(x = flow_duration, y = fwd_iat_total, color = "BENIGN"), 
+             alpha = 0.6, size = 2) +  # Color for label 0
+  geom_point(data = DDoS_dataset[DDoS_dataset$label == 1, ], 
+             aes(x = flow_duration, y = fwd_iat_total, color = "DDoS"), 
+             alpha = 0.8, size = 2.5) +  # Color for label 1
+  scale_color_manual(values = c("BENIGN" = "blue", "DDoS" = "red")) +  # Custom color mapping
+  theme_minimal() +
+  labs(title = "Flow Duration vs FWD IAT Total", x = "Flow Duration", y = "FWD IAT Total") + 
+  theme(legend.title = element_blank()) 
+
+```
+
+
+
+```{r}
+
+ggplot() + 
+  geom_point(data = DDoS_dataset[DDoS_dataset$label == 0, ], 
+             aes(x = total_fwd_packets, y = total_backward_packets, color = "BENIGN"), 
+             alpha = 0.6, size = 2) +  # Color for label 0
+  geom_point(data = DDoS_dataset[DDoS_dataset$label == 1, ], 
+             aes(x = total_fwd_packets, y = total_backward_packets, color = "DDoS"), 
+             alpha = 0.8, size = 2.5) +  # Color for label 1
+  scale_color_manual(values = c("BENIGN" = "blue", "DDoS" = "red")) +  # Custom color mapping
+  theme_minimal() +
+  labs(title = "Total Forward Packets vs Total Backward Packets", 
+       x = "Total Forward Packets", y = "Total Backward Packets") + 
+  theme(legend.title = element_blank())  # Remove legend title
+
+```
+
+```{r}
+# Plotting with ggplot
+DDoS_dataset %>%
+  select(contains("flag_count"), label) %>%
+  group_by(label) %>%
+  summarise(across(everything(), sum, na.rm = TRUE)) %>%
+  pivot_longer(cols = -label, 
+               names_to = "flag_type", 
+               values_to = "flag_count") %>%
+  ggplot(aes(x = flag_type, y = flag_count, fill = as.factor(label))) + 
+  geom_bar(stat = "identity", position = "dodge", alpha = 0.7) + 
+  scale_fill_manual(values = c("red", "blue")) + 
+  theme_minimal() +
+  labs(title = "Aggregated Flag Counts by Label", 
+       x = "Flag Type", 
+       y = "Count of Flags", 
+       fill = "Label") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+
+```
+
+
+```{r}
+
+ggplot(DDoS_dataset, aes(x = packet_length_std, y = packet_length_variance, colour = as.factor(label))) + 
+  geom_point(alpha = 0.6, size = 2, position = "identity") +  # Set transparency for all points
+  scale_color_manual(values = c("1" = "red", "0" = "blue")) +  # Reverse color mapping
+  theme_minimal() +  # Clean theme
+  labs(title = "Packet Length Std vs Packet Length Variance", x = "Packet Length Std", y = "Packet Length Variance Total") +  # Labels
+  theme(legend.title = element_blank(),  # Remove legend title
+        legend.key = element_rect(color = "black"))
 ```
 
 ## 5. Reference list 
