@@ -40,6 +40,18 @@ To better understand and model DDoS attacks, we will use the CIC-DDoS2019 datase
 -   **Categorical Variables:**
 
     -   **protocol: Denotes the protocol used,** with three levels; **0, 6 and 17**
+    -   **fin_flag_count:** The number of packets with FIN (Finish) flag, which signals the termination of a connection, with two levels, 1 and 0.
+    -   **syn_flag_count:** The number of packets with SYN (Synchronize) flag, used to initiate a TCP connection, with two levels, 1 and 0.
+    -   **rst_flag_count:** The number of packets with RST (Reset) flag, used to abruptly terminate a connection, with two levels, 1 and 0.
+    -   **psh_flag_count:** The number of packets with PSH (Push) flag, which tells the receiver to process data immediately rather than buffering it, with two levels, 1 and 0.
+    -   **ack_flag_count:** The number of packets with ACK (Acknowledgment) flag, which confirms the receipt data, with two levels, 1 and 0.
+    -   **urg_flag_count:** The number of packets with URG (Urgent) flag, indicating that certain data should be processed immediately, with two levels, 1 and 0.
+    -   **cwe_flag_count:** Will be renamed to correct name : CWR (Congestion window reduced) flag, used in TCP congestion control to signal a reduced congestion window, with two levels, 1 and 0.
+    -   **ece_flag_count:** The number of packets with ECE (Explicit Congestion Notification Eco) flag, indicates network congestion, with two levels, 1 and 0.
+    -   **fwd_psh_flags:** Number of time the PSH (Push) flag was set in packets travelling in the forward direction, with two levels, 1 and 0.
+    -   **bwd_psh_flags:** Number of time the PSH (Push) flag was set in packets travelling in the backward direction, with two levels, 1 and 0.
+    -   **fwd_urg_flags:** Number of time the URG (Urgent) flag was set in packets travelling in the forward direction, with two levels, 1 and 0.
+    -   bwd_urg_flags: Number of time the URG (Urgent) flag was set in packets travelling in the forward direction, with two levels, 1 and 0.
 
 -   **Continuous Variables:**
 
@@ -111,14 +123,6 @@ To better understand and model DDoS attacks, we will use the CIC-DDoS2019 datase
 
         -   **bwd_iat_min:** The minimum inter-arrival time between packets sent in the forward direction.
 
-    -   **fwd_psh_flags:** Number of time the PSH (Push) flag was set in packets travelling in the forward direction.
-
-    -   **bwd_psh_flags:** Number of time the PSH (Push) flag was set in packets travelling in the backward direction.
-
-    -   **fwd_urg_flags:** Number of time the URG (Urgent) flag was set in packets travelling in the forward direction.
-
-    -   bwd_urg_flags: Number of time the URG (Urgent) flag was set in packets travelling in the forward direction.
-
     -   **fwd_header_length_41:** The total bytes used for headers in the forward direction.
 
     -   **bwd_header_length:** The total bytes used for headers in the backward direction.
@@ -138,22 +142,6 @@ To better understand and model DDoS attacks, we will use the CIC-DDoS2019 datase
         -   **packet_length_std:** The standard deviation length of a packet.
 
         -   **packet_length_variance:** The variance length of a packet.
-
-    -   **fin_flag_count:** The number of packets with FIN (Finish) flag, which signals the termination of a connection.
-
-    -   **syn_flag_count:** The number of packets with SYN (Synchronize) flag, used to initiate a TCP connection.
-
-    -   **rst_flag_count:** The number of packets with RST (Reset) flag, used to abruptly terminate a connection.
-
-    -   **psh_flag_count:** The number of packets with PSH (Push) flag, which tells the receiver to process data immediately rather than buffering it.
-
-    -   **ack_flag_count:** The number of packets with ACK (Acknowledgment) flag, which confirms the receipt data.
-
-    -   **urg_flag_count:** The number of packets with URG (Urgent) flag, indicating that certain data should be processed immediately.
-
-    -   **cwe_flag_count:** Will be renamed to correct name : CWR (Congestion window reduced) flag, used in TCP congestion control to signal a reduced congestion window.
-
-    -   **ece_flag_count:** The number of packets with ECE (Explicit Congestion Notification Eco) flag, indicates network congestion.
 
     -   **down_up_ratio:** Download and upload ratio.
 
@@ -205,9 +193,8 @@ To better understand and model DDoS attacks, we will use the CIC-DDoS2019 datase
 
     -   
 
-    ```{=html}
     <!-- -->
-    ```
+
     -   **IDLE Metrics:**
 
         -   **idle_mean:** The average time a flow was idle before becoming active.
@@ -222,11 +209,13 @@ To better understand and model DDoS attacks, we will use the CIC-DDoS2019 datase
 
 -   **Response Variable:**
 
-    -    **label:**
+    -   **label:**
 
-        -   **BENIGN:** Normal legitimate network traffic
+    ```         
+    -   **BENIGN:** Normal legitimate network traffic
 
-        -   **DDoS:** Malicious network traffic.
+    -   **DDoS:** Malicious network traffic.
+    ```
 
 ```{r setup, include=FALSE}
 # --- loading libraries 
@@ -234,8 +223,11 @@ library(tidyverse) # for extra functions
 library(janitor) # for column name cleaning 
 library(viridis) # for color palettes 
 library(corrplot) # for correlation plot 
-library(ggnewscale) # for plots 
-
+library(ggnewscale) # for extra plot functions 
+library(car) # for VIF function 
+library(scales) # for extra plot functions 
+library(gridExtra) # extra plot functions (grid functions)
+library(grid) # extra plot functions (grids)
 ```
 
 ## 
@@ -245,19 +237,300 @@ library(ggnewscale) # for plots
 DDoS_dataset <- read_csv("Data/Friday-WorkingHours-Afternoon-DDos.pcap_ISCX.csv") %>% clean_names()
 
 # view data 
-print(DDoS_dataset)
+head(DDoS_dataset)
+```
+
+## 3. Data Preprocessing & Preparation 
+
+In this section, we focus primarily on preparing the dataset for analysis and modeling. Data processing is often considered the most crucial stage, as the quality of data directly impacts the accuracy of our model, reliability of the results, reducing overfitting, and mitigation of any unccessary errors. This process includes:
+
+**Handling missing values:** Identifying and addressing any missing data to ensure a complete dataset, this also involves dropping columns/variables that contains any extreme amount of null values.
+
+**Data transformation:** Converting variables to their respective formats, and possibly scaling the features.
+
+**Handling class imbalance:** Addressing imbalanced variables often provides beneficial outcomes, as often if a column is imbalanced it may skew the results. In this case, handling this before the modeling phase is essential, in order to mitigate any future issues.
+
+**Feature selection:** Removing any redundant or non-informative variables that do not contribute to the models performance and results. This includes unique identifying variables such as name, ID, etc.
+
+**Removing highly correlated variables:** Identifying and removing variables that are highly correlated is essential to prevent redundancy, and multicollinearity, which can distort model interpretation and inflate our variance. This would also require us in utilizing VIF (Variance Inflation Factor) later on to track if our model overfitting, and impact the performance.
+
+#### **3.1 Handling any possible missing values:** 
+
+```{r}
+# --- check for null values 
+cat(paste("Total null values found:", sum(is.na(DDoS_dataset))))
+```
+
+#### **3.2 Data transformation:**
+
+-   The label class, which is our target variable is currently labeled as DDoS, and BENIGN. We would then re-code as DDoS = 1, and BENIGN = 0.
+
+-   Converting several variables as factors, as they represent categorical data that will be used in the modeling stage.
+
+```{r}
+# recode label variable to 1 and 0.
+DDoS_dataset <- DDoS_dataset %>%
+  mutate(label = dplyr::recode(label, "DDoS" = 1, "BENIGN" = 0))
+cat("Recoded label variable to 1 and 0.\n")
+
+# converting several variables to factor 
+DDoS_dataset <- DDoS_dataset %>%
+  mutate(
+    label = as.factor(label),
+    protocol = as.factor(protocol),
+    fwd_psh_flags = as.factor(fwd_psh_flags),
+    bwd_psh_flags = as.factor(bwd_psh_flags),
+    fwd_urg_flags = as.factor(fwd_urg_flags),
+    bwd_urg_flags = as.factor(bwd_urg_flags),
+    fin_flag_count = as.factor(fin_flag_count),
+    syn_flag_count = as.factor(syn_flag_count),
+    rst_flag_count = as.factor(rst_flag_count),
+    psh_flag_count = as.factor(psh_flag_count),
+    urg_flag_count = as.factor(urg_flag_count),
+    cwe_flag_count = as.factor(cwe_flag_count),
+    ece_flag_count = as.factor(ece_flag_count),
+  )
+cat("Converted relevant variables to factors.\n")
+
+```
+
+#### **3.3 Handling class imbalance:** 
+
+"As mentioned before, handling class imbalance is a vital process, often requiring an in-depth analysis of the underlying factors contributing to the imbalance. In the context of the DDoS dataset, one of the primary features where imbalance is observed is in the **protocol** column. This column likely contains values representing different network protocols (e.g., TCP, UDP, ICMP) used in network traffic.
+
+A closer look at the distribution of values within the **protocol** column reveals significant disparities between different classes. For example, in one set of data, we might observe counts like the following:
+
+In this case, the **BENIGN** class (label 0) is heavily underrepresented for certain protocol types, while **DDoS** attacks (label 1) dominate specific protocols. This imbalance is further amplified when considering the disproportionate distribution of attacks across different protocols. The **DDoS** class, for instance, may have an overwhelming presence in some protocols (such as Protocol 1), while others may show almost no attacks. This indicates that certain network protocols are more susceptible to DDoS attacks, which has critical implications for identifying and mitigating potential threats in real-world settings.
+
+Thus, an effective approach to addressing this imbalance must consider the **protocol** column's distribution. Techniques like **oversampling**, **undersampling**, or **adjusting class weights** during model training could be employed to mitigate the impact of this imbalance. Additionally, **feature engineering** methods such as protocol-specific weighting could help the model focus more on the minority class (e.g., DDoS) while still capturing key information across all protocols."
+
+In this, we can observe that **BENIGN class (label 0) is heavily underrepresented certain cases when the protocol used is "6". However, this is not the case for the DDoS (label 1), when the protocol used is "0" and "17",**
+
+```{r}
+# 
+table(DDoS_dataset$label, DDoS_dataset$protocol)
 ```
 
 ```{r}
-# unique Values
-length(unique(DDoS_dataset$label))
-length(unique(DDoS_dataset$fwd_header_length))
+# bar plot of target and protocol distribution
+ggplot(DDoS_dataset, aes(x = as.factor(protocol), fill = as.factor(label))) +
+  geom_bar(color = "black", alpha = 0.7, linewidth = 0.3) +
+  labs(title = "Figure 2: Distribution of DDoS Attack Labels by Protocol", x = "Protocol", y = "Count") +
+  theme_minimal() +
+  scale_fill_manual(values = c("0" = "blue", "1" = "red"), 
+                    labels = c("0" = "BENIGN", "1" = "DDoS"),
+                    guide = guide_legend(title = NULL)) +
+  scale_y_continuous(labels = scales::comma)
 
-# remove unique ID columns 
-# (flow_id, source_ip, source_port, destination_ip, destination_port)
+# Issues protocol variable 
+# When "0", BENIGN is 54, while DDoS is 0. 
+# When "6", BENIGN is 64793, while DDoS is 128027. 
+# When "17", BENIGN is 32871, while DDoS is 0. 
 ```
 
-## 3. Data Preprocessing 
+```{r}
+# Define the plots for syn_flag_count
+plot1 <- ggplot(DDoS_dataset, aes(x = as.factor(syn_flag_count), fill = as.factor(label))) +    
+  geom_bar(stat = "count", position = "dodge", alpha = 0.7) +
+  labs(x = "Syn Flag Count", y = "Count", fill = "Label") +
+  theme_minimal() +
+  scale_fill_manual(values = c("blue", "red")) +
+  scale_y_continuous(labels = label_comma()) +  
+  theme(legend.position = "none", axis.title.x = element_text(size = 9))
+
+# Define the plots for rst_flag_count
+plot2 <- ggplot(DDoS_dataset, aes(x = as.factor(rst_flag_count), fill = as.factor(label))) +    
+  geom_bar(stat = "count", position = "dodge", alpha = 0.7) +
+  labs(x = "RST Flag Count", y = "Count", fill = "Label") +
+  theme_minimal() +
+  scale_fill_manual(values = c("blue", "red")) +
+  scale_y_continuous(labels = label_comma()) +  
+  theme(legend.position = "none", axis.title.x = element_text(size = 9))
+
+# Define the plots for psh_flag_count
+plot3 <- ggplot(DDoS_dataset, aes(x = as.factor(psh_flag_count), fill = as.factor(label))) +    
+  geom_bar(stat = "count", position = "dodge", alpha = 0.7) +
+  labs(x = "PSH Flag Count", y = "Count", fill = "Label") +
+  theme_minimal() +
+  scale_fill_manual(values = c("blue", "red")) +
+  scale_y_continuous(labels = label_comma()) +  
+  theme(legend.position = "none", axis.title.x = element_text(size = 9))
+
+# Define the plots for ack_flag_count
+plot4 <- ggplot(DDoS_dataset, aes(x = as.factor(ack_flag_count), fill = as.factor(label))) +    
+  geom_bar(stat = "count", position = "dodge", alpha = 0.7) +
+  labs(x = "ACK Flag Count", y = "Count", fill = "Label") +
+  theme_minimal() +
+  scale_fill_manual(values = c("blue", "red")) +
+  scale_y_continuous(labels = label_comma()) +  
+  theme(legend.position = "none", axis.title.x = element_text(size = 9))
+
+# Define the plots for urg_flag_count
+plot5 <- ggplot(DDoS_dataset, aes(x = as.factor(urg_flag_count), fill = as.factor(label))) +    
+  geom_bar(stat = "count", position = "dodge", alpha = 0.7) +
+  labs(x = "URG Flag Count", y = "Count", fill = "Label") +
+  theme_minimal() +
+  scale_fill_manual(values = c("blue", "red")) +
+  scale_y_continuous(labels = label_comma()) +  
+  theme(legend.position = "none", axis.title.x = element_text(size = 9))
+
+# Define the plots for cwe_flag_count
+plot6 <- ggplot(DDoS_dataset, aes(x = as.factor(cwe_flag_count), fill = as.factor(label))) +    
+  geom_bar(stat = "count", position = "dodge", alpha = 0.7) +
+  labs(x = "CWE Flag Count", y = "Count", fill = "Label") +
+  theme_minimal() +
+  scale_fill_manual(values = c("blue", "red")) +
+  scale_y_continuous(labels = label_comma()) +  
+  theme(legend.position = "none", axis.title.x = element_text(size = 9))
+
+# Define the plots for ece_flag_count
+plot7 <- ggplot(DDoS_dataset, aes(x = as.factor(ece_flag_count), fill = as.factor(label))) +    
+  geom_bar(stat = "count", position = "dodge", alpha = 0.7) +
+  labs(x = "ECE Flag Count", y = "Count", fill = "Label") +
+  theme_minimal() +
+  scale_fill_manual(values = c("blue", "red")) +
+  scale_y_continuous(labels = label_comma()) +  
+  theme(legend.position = "none", axis.title.x = element_text(size = 9))
+
+# Define the plots for dummyplot1 to extract legend 
+dummyplot1 <- ggplot(DDoS_dataset, aes(x = as.factor(syn_flag_count), fill = as.factor(label))) +
+  geom_bar(stat = "count", position = "dodge", alpha = 0.7) +
+  scale_fill_manual(values = c("0" = "blue", "1" = "red"),  
+                    labels = c("0" = "BENIGN", "1" = "DDoS"),
+                    guide = guide_legend(title = NULL)) + 
+  theme_minimal() + 
+  guides(fill = guide_legend(title = "Label", 
+                             ncol = 2, 
+                             title.position = "top", 
+                             title.hjust = 0.5))  
+# function to extract the legend
+g_legend <- function(a.gplot) {
+  tmp <- ggplot_gtable(ggplot_build(a.gplot))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  tmp$grobs[[leg]]
+}
+legend <- g_legend(dummyplot1)
+```
+
+```{r}
+# Arrange the plots into a grid, leaving the last column for the legend
+grid.arrange(
+  plot1, plot2, plot3, plot4, plot5, plot6, plot7, legend,
+  ncol = 2,  # Set 3 columns
+  top = textGrob("Figure 3: Distribution of Flag Counts By Label", gp = gpar(fontsize = 10, fontface = "bold"))
+)
+```
+
+```{r}
+# Helper function to extract the legend
+g_legend <- function(a.gplot) {
+  tmp <- ggplot_gtable(ggplot_build(a.gplot))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  tmp$grobs[[leg]]
+}
+
+# Define the plots for fwd_psh_flags 
+plot_1 <- ggplot(DDoS_dataset, aes(x = fwd_psh_flags, fill = as.factor(label))) +   
+  geom_bar(stat = "count", position = "dodge", alpha = 0.7) +
+  labs(x = "FWD PSH Flags", y = "Count", fill = "Label") +
+  scale_fill_manual(values = c("blue", "red")) + 
+  theme_minimal() +
+  ggtitle("") +
+  scale_y_continuous(labels = label_comma()) +
+  theme(legend.position = "none")  # Remove the legend from this plot
+
+# Define the plots for bwd_psh_flags 
+plot_2 <- ggplot(DDoS_dataset, aes(x = bwd_psh_flags, fill = as.factor(label))) +   
+  geom_bar(stat = "count", position = "dodge", alpha = 0.7) +
+  labs(x = "BWD PSH Flags", y = "Count", fill = "Label") +
+  scale_fill_manual(values = c("blue", "red")) +
+  theme_minimal() +
+  ggtitle("") +
+  scale_y_continuous(labels = label_comma()) +
+  theme(legend.position = "none")
+
+# Define the plots for fwd_urg_flags 
+plot_3 <- ggplot(DDoS_dataset, aes(x = fwd_urg_flags, fill = as.factor(label))) +   
+  geom_bar(stat = "count", position = "dodge", alpha = 0.7) +
+  labs(x = "FWD URG Flags", y = "Count", fill = "Label") +
+  scale_fill_manual(values = c("blue", "red")) +
+  theme_minimal() +
+  ggtitle("") +
+  scale_y_continuous(labels = label_comma()) +
+  theme(legend.position = "none")
+
+# Define the plots for bwd_urg_flags 
+plot_4 <- ggplot(DDoS_dataset, aes(x = bwd_urg_flags, fill = as.factor(label))) +   
+  geom_bar(stat = "count", position = "dodge", alpha = 0.7) +
+  labs(x = "BWD URG Flags", y = "Count", fill = "Label") +
+  scale_fill_manual(values = c("blue", "red")) +
+  theme_minimal() +
+  ggtitle("") +
+  scale_y_continuous(labels = label_comma()) +
+  theme(legend.position = "none")
+
+# Define the plots for dummyplot2  
+dummyplot2 <- ggplot(DDoS_dataset, aes(x = fwd_psh_flags, fill = as.factor(label))) +
+  geom_bar(stat = "count", position = "dodge", alpha = 0.7) +
+  scale_fill_manual(values = c("0" = "blue", "1" = "red"), 
+                    labels = c("0" = "BENIGN", "1" = "DDoS"),
+                    guide = guide_legend(title = NULL)) +
+  theme_minimal() +
+  guides(fill = guide_legend(title = "Label", ncol = 2))
+
+# Extract the legend from the dummy plot
+legend <- g_legend(dummyplot2)
+```
+
+```{r}
+# Arrange the plots into a grid and add the title
+grid.arrange(
+  plot_1, plot_2, plot_3, plot_4,
+  ncol = 2,
+  top = textGrob("Figure 4: Distribution of PSH/URG Flags in the FWD & BWD", gp = gpar(fontsize = 10, fontface = "bold")),  # Adding a title at the top
+  bottom = legend  # Adding the shared horizontal legend at the bottom
+)
+```
+
+```{r}
+
+  
+# dropping due to imbalance issue 
+' 14 total 
+syn_flag_count
+urg_flag_count
+ece_flag_count
+rst_flag_count
+cwe_flag_count
+fwd_psh_flags 
+bwd_psh_flags
+fwd_urg_flags
+bwd_urg_flags
+fwd_avg_bytes_bulk
+fwd_avg_packets_bulk
+fwd_avg_bulk_rate
+bwd_avg_bytes_bulk
+bwd_avg_bulk_rate' 
+
+
+# check values for each of these variables 
+summary(DDoS_dataset)
+
+DDoS_dataset %>% 
+  select(fwd_psh_flags, fwd_urg_flags, bwd_urg_flags, fwd_avg_bytes_bulk, 
+         fwd_avg_packets_bulk, fwd_avg_bulk_rate, bwd_avg_bytes_bulk, bwd_avg_bulk_rate) %>%
+  summary()
+
+# we note that in this section we will explore a few variables that will be dropped due to their lack of importance in the later stage of analysis and modeling building. This will further include variables that contain only zero, and at later stage, we will conduct further analysis on any imbalanced variables. 
+
+lm <- glm(label ~ flow_duration, data = DDoS_dataset, family = "binomial")
+
+summary(lm)
+
+unique(DDoS_dataset$label)
+```
+
+we note that in this section we will explore a few variables that will be dropped due to their lack of importance in the later stage of analysis and modeling building. This will further include variables that contain only zero, and at later stage, we will conduct further analysis on any imbalanced variables.
 
 Remove unique ID columns
 
@@ -271,72 +544,23 @@ Remove unique ID columns
 
 -   destination_port
 
--   timestamp
+-   timestamp, keeping for analysis purposes, will be dropped during model building.
 
 ```{r}
 # --- remove unwanted variables 
 DDoS_dataset <- DDoS_dataset %>%
   select(-flow_id, -source_ip, 
          -source_port, -destination_ip, 
-         -destination_port, -timestamp)
+         -destination_port)
 ```
 
-Checking and removing null rows
+## 4. Data Analysis
 
-```{r}
-# --- check for null values 
-sum(is.na(DDoS_dataset))
-```
-
-## 4. Data Analysis 
-
-### 4.1 Correlation Matrix 
+### 4.1 Correlation Matrix
 
 In this section, creating a correlation matrix
 
-```{r}
-# 
-DDoS_dataset <- DDoS_dataset %>%
-  mutate(label = recode(label, "DDoS" = 1, "BENIGN" = 0))
-
-# assigning columns as numeric 
-DDoS_dataset <- DDoS_dataset %>%
-  mutate(across(-c(1, 79), as.numeric))
-
-# Select the columns: 1 to 40 and 79
-DDoS_dataset %>%
-  select(1:40, 79) %>%  # Select columns 1 to 39 and column 79
-  select(which(sapply(., sd) != 0)) %>%
-  cor() %>% corrplot(method = "color", 
-        tl.cex = 0.5, 
-         number.cex = 0.5,
-         tl.srt = 45,
-          tl.col = "black",
-         order = "hclust",
-         addCoef.col = "black",  # Display correlation values
-           number.digits = 1)
-```
-
-```{r}
-# Select the columns: 41 to 79
-DDoS_dataset %>%
-  select(41:79) %>%  # Select columns 1 to 39 and column 79
-  select(which(sapply(., sd) != 0)) %>%
-  cor() %>% corrplot(method = "color", 
-         tl.cex = 0.5, 
-         number.cex = 0.5,
-         tl.srt = 45,
-          tl.col = "black",
-         order = "hclust",
-         addCoef.col = "black",  # Display correlation values
-           number.digits = 1)
-
-```
-
-
-
-
-### 4.2 Data Viz 
+### 4.2 Data Viz
 
 ```{r}
 # Plot the distribution of the 'Target' variable
@@ -354,28 +578,6 @@ ggplot(DDoS_dataset, aes(x = as.factor(label))) +
 
 ```
 
-
-```{r}
-table(DDoS_dataset$label, DDoS_dataset$protocol)
-
-
-# bar plot of target and protocol distribution
-ggplot(DDoS_dataset, aes(x = as.factor(protocol), fill = as.factor(label))) +
-  geom_bar(color = "black", alpha = 0.8, linewidth = 0.3) +
-  labs(title = "Distribution of DDoS Attack Labels by Protocol", x = "Protocol", y = "Count") +
-  theme_minimal() +
-  scale_fill_manual(values = c("0" = "blue", "1" = "red"), 
-                    labels = c("0" = "BENIGN", "1" = "DDoS"),
-                    guide = guide_legend(title = NULL)) +
-  scale_y_continuous(labels = scales::comma)
-
-# Issues protocol variable 
-# When "0", BENIGN is 54, while DDoS is 0. 
-# When "6", BENIGN is 64793, while DDoS is 128027. 
-# When "17", BENIGN is 32871, while DDoS is 0. 
-
-```
-
 ```{r}
 ggplot() + 
   geom_point(data = DDoS_dataset[DDoS_dataset$label == 0, ], 
@@ -390,8 +592,6 @@ ggplot() +
   theme(legend.title = element_blank()) 
 
 ```
-
-
 
 ```{r}
 
@@ -411,28 +611,6 @@ ggplot() +
 ```
 
 ```{r}
-# Plotting with ggplot
-DDoS_dataset %>%
-  select(contains("flag_count"), label) %>%
-  group_by(label) %>%
-  summarise(across(everything(), sum, na.rm = TRUE)) %>%
-  pivot_longer(cols = -label, 
-               names_to = "flag_type", 
-               values_to = "flag_count") %>%
-  ggplot(aes(x = flag_type, y = flag_count, fill = as.factor(label))) + 
-  geom_bar(stat = "identity", position = "dodge", alpha = 0.7) + 
-  scale_fill_manual(values = c("red", "blue")) + 
-  theme_minimal() +
-  labs(title = "Aggregated Flag Counts by Label", 
-       x = "Flag Type", 
-       y = "Count of Flags", 
-       fill = "Label") + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
-
-```
-
-
-```{r}
 
 ggplot(DDoS_dataset, aes(x = packet_length_std, y = packet_length_variance, colour = as.factor(label))) + 
   geom_point(alpha = 0.6, size = 2, position = "identity") +  # Set transparency for all points
@@ -443,8 +621,37 @@ ggplot(DDoS_dataset, aes(x = packet_length_std, y = packet_length_variance, colo
         legend.key = element_rect(color = "black"))
 ```
 
-## 5. Reference list 
+```{r}
+
+
+
+
+numeric_columns <- DDoS_dataset %>% select(where(is.numeric))
+
+# Compute the correlation matrix for numeric variables
+matriz_cor <- cor(numeric_columns)
+
+sd_values <- sapply(numeric_columns, sd)
+
+# Check which variables have a standard deviation of zero
+zero_sd_vars <- names(sd_values[sd_values == 0])
+
+# Print the variables with zero standard deviation
+print(zero_sd_vars)
+
+# fwd_psh_flags, 
+
+# drop as only contains 0's and will not be important for the project 
+# bwd_psh_flags, fwd_urg_flags, bwd_urg_flags
+
+
+
+```
+
+## 5. Reference list
 
 -   Zayo Group (2024) *Average ddos attack cost businesses nearly half a million dollars in 2023, according to New Zayo Data: Press release: Zayo*, *Zayo.com*. Available at: <https://www.zayo.com/newsroom/average-ddos-attack-cost-businesses-nearly-half-a-million-dollars-in-2023-according-to-new-zayo-data/> (Accessed: 18 March 2025).
 
 -   Garcia, D.M. (2021) *The 2011 PlayStation Network Hack – what actually happened?*, *WestSide Story*. Available at: <https://wsswired.com/4837/entertainment-3/the-2011-playstation-network-hack-what-actually-happened/> (Accessed: 18 March 2025).
+
+## 6. Index 
