@@ -2,276 +2,69 @@
 title: "DDOS Project EDA"
 author: "Firass Elhouat"
 date: "2025-03-14"
-output: pdf_document
+output: 
+  pdf_document:
+    toc: true
+    toc_depth: 2
+    number_sections: yes
+fontsize: 10pt
+header-includes:
+  - \usepackage{times}
+  - \usepackage{ragged2e}
+  - \justifying
+  - \usepackage[compact]{titlesec}
+  - \usepackage{float}  # Allows forced table positioning
 ---
 
-## 1. Introduction
-
-In today’s digital landscape, Distributed Denial-of-Service (DDoS) attacks have emerged as one of the most prevalent and disruptive cybersecurity threats facing business and organizations of all sizes. This includes government agencies, educational institutions, healthcare, and any business that relies on servers and network access.
-
-These attacks are designed to overwhelm a target’s/victim’s servers or network infrastructure with a flood of illegitimate traffic, rendering online services inaccessible to legitimate users and other stakeholders. The costs incurred during these attacks tend to vary depending on the duration and attackers motives. For instance, an insight report published in 2023 by Zayn Group, found that DDoS attacks on average last around 68 minutes, with unprotected organizations having to payout around \$6,000 per minute of each attack, [(Zayo Group (2024))](https://www.zayo.com/newsroom/average-ddos-attack-cost-businesses-nearly-half-a-million-dollars-in-2023-according-to-new-zayo-data/).
-
-This totals to around \$408,000 per attack, that a business loses, which takes into account lost revenue, cost of detection, recovery, and cybersecurity preventives. While the immediate impact of a DDoS attack manifest as downtime or service disruptions, the broader consequences extend far beyond revenue loss. Businesses suffer from brand reputation damage, operational disruptions, legal ramifications, customer churn, and costly mitigation efforts.
-
-A notable example is Sony’s PlayStation Network (PSN), which has been a frequent target of DDoS and other Malware attacks, most infamously in 2011, when a large-scale attack brought down the network for nearly a month, [(Garcia, D.M. (2021))](https://wsswired.com/4837/entertainment-3/the-2011-playstation-network-hack-what-actually-happened/) . This attack not only resulted in financial losses due to service interruptions and compensations to users but also severely impacted customer trust and brand loyalty. Many frustrated gamers switched to Steam (PC Gaming Platform) and Microsoft’s Xbox Live, which was perceived as more stable and secure at the time.
-
-The PlayStation Network attack highlighted the long-term effects of DDoS attack, where the loss of consumer confidence led to a direct increase in competitors market share. Sony had to invest heavily in cybersecurity upgrades, public relations efforts, and damage control to regain trust, but the attack had already left a lasting impression on its user baser.
-
-To better understand and model DDoS attacks, we will be utilizing a publicly available dataset from [Kaggle](https://www.kaggle.com/datasets/aymenabb/ddos-evaluation-dataset-cic-ddos2019/data){.uri}. This dataset contains extensive network traffic data, including packet details, communication protocols, and attack indicators. By applying Exploratory Data Analysis (EDA), we aim to identify patterns that distinguish normal traffic from malicious DDoS activity. Through this analysis, we aim to develop a predictive model that can detect potential DDoS threats in real time, helping us fully understand how these attacks occur, and what are some possible mitigation efforts that can be implemented to reduce the significant effects, and how each variable in our dataset explains our target variable.
-
-## **2. Dataset**
-
-To better understand and model DDoS attacks, we will use the CIC-DDoS2019 dataset that was generated using a [CICFlowMeter-V3](https://www.unb.ca/cic/research/applications.html#CICFlowMeter) which contains 225,745 rows, and 85 various variables that help differentiate between normal and attack-related traffic. The dataset includes these defined attributes/variables:
-
--   **Identifier and date variables:** These are most likely to be dropped as they are not useful during the modeling phase of our project.
-
-    -   **flow_id**
-
-    -   **source_ip**
-
-    -   **source_port**
-
-    -   **destination_ip**
-
-    -   **destination_port**
-
-    -   **Time stamp**
-
--   **Categorical Variables:**
-
-    -   **protocol: Denotes the protocol used,** with three levels; **0, 6 and 17**
-    -   **fin_flag_count:** The number of packets with FIN (Finish) flag, which signals the termination of a connection, with two levels, 1 and 0.
-    -   **syn_flag_count:** The number of packets with SYN (Synchronize) flag, used to initiate a TCP connection, with two levels, 1 and 0.
-    -   **rst_flag_count:** The number of packets with RST (Reset) flag, used to abruptly terminate a connection, with two levels, 1 and 0.
-    -   **psh_flag_count:** The number of packets with PSH (Push) flag, which tells the receiver to process data immediately rather than buffering it, with two levels, 1 and 0.
-    -   **ack_flag_count:** The number of packets with ACK (Acknowledgment) flag, which confirms the receipt data, with two levels, 1 and 0.
-    -   **urg_flag_count:** The number of packets with URG (Urgent) flag, indicating that certain data should be processed immediately, with two levels, 1 and 0.
-    -   **cwe_flag_count:** Will be renamed to correct name : CWR (Congestion window reduced) flag, used in TCP congestion control to signal a reduced congestion window, with two levels, 1 and 0.
-    -   **ece_flag_count:** The number of packets with ECE (Explicit Congestion Notification Eco) flag, indicates network congestion, with two levels, 1 and 0.
-    -   **fwd_psh_flags:** Number of time the PSH (Push) flag was set in packets travelling in the forward direction, with two levels, 1 and 0.
-    -   **bwd_psh_flags:** Number of time the PSH (Push) flag was set in packets travelling in the backward direction, with two levels, 1 and 0.
-    -   **fwd_urg_flags:** Number of time the URG (Urgent) flag was set in packets travelling in the forward direction, with two levels, 1 and 0.
-    -   bwd_urg_flags: Number of time the URG (Urgent) flag was set in packets travelling in the forward direction, with two levels, 1 and 0.
-
--   **Continuous Variables:**
-
-    -   **flow_duration:** The duration of the flow in microseconds.
-
-    -   **total_fwd_packets:** The total packets in the forward direction.
-
-    -   **total_backward_packets:** The total packets in the backward direction.
-
-    -   **total_length_of_fwd_packets:** The total size of a packet in the forward direction.
-
-    -   **total_length_of_bwd_packets:** The total size of a packet in the backward direction.
-
-    -   **Forward (FWD) Packet Length Metrics:**
-
-        -   **fwd_packet_length_max:** The maximum size of a packet in the forward direction.
-
-        -   **fwd_packet_length_min:** The minimum size of a packet in the forward direction.
-
-        -   **fwd_packet_length_mean:** The mean size of a packet in the forward direction.
-
-        -   **fwd_packet_length_std:** The Standard deviation size of a packet in the forward direction.
-
-    -   **Backward (BWD) Packet Length Metrics:**
-
-        -   **bwd_packet_length_max:** The maximum size of a packet in the backward direction.
-
-        -   **bwd_packet_length_min:** The minimum size of a packet in the backward direction.
-
-        -   **bwd_packet_length_mean:** The mean size of a packet in the backward direction.
-
-        -   **bwd_packet_length_std:** The standard deviation size of a packet in the backward direction.
-
-    -   **flow_bytes_s:** The number of flow bytes per second.
-
-    -   **flow_packets_s:** The number of flow packets per second.
-
-    -   **Flow Inter-Arrival Time (IAT) Metrics:**
-
-        -   **flow_iat_mean:** The average inter-arrival time between packets within a flow.
-
-        -   **flow_iat_std:** The standard deviation inter-arrival time between packets within a flow.
-
-        -   **flow_iat_max:** The maximum inter-arrival time between packets within a flow.
-
-        -   **flow_iat_min:** The minimum inter-arrival time between packets within a flow.
-
-    -   **Forward (FWD) Inter-Arrival Time (IAT) Metrics:**
-
-        -   **fwd_iat_total:** The total inter-arrival time between packets sent in the forward direction.
-
-        -   **fwd_iat_mean:** The average inter-arrival time between packets sent in the forward direction.
-
-        -   **fwd_iat_std:** The standard deviation inter-arrival time between packets sent in the forward direction.
-
-        -   **fwd_iat_max:** The maximum inter-arrival time between packets sent in the forward direction.
-
-        -   **fwd_iat_min:** The minimum inter-arrival time between packets sent in the forward direction.
-
-    -   **Backward (BWD) Inter-Arrival Time (IAT) Metrics:**
-
-        -   **bwd_iat_total:** The total inter-arrival time between packets sent in the forward direction.
-
-        -   **bwd_iat_mean:** The average inter-arrival time between packets sent in the forward direction.
-
-        -   **bwd_iat_std:** The standard deviation inter-arrival time between packets sent in the forward. direction.
-
-        -   **bwd_iat_max:** The maximum inter-arrival time between packets sent in the forward direction.
-
-        -   **bwd_iat_min:** The minimum inter-arrival time between packets sent in the forward direction.
-
-    -   **fwd_header_length_41:** The total bytes used for headers in the forward direction.
-
-    -   **bwd_header_length:** The total bytes used for headers in the backward direction.
-
-    -   **fwd_packets_s:** Number of forward packets transmitted per second.
-
-    -   **bwd_packets_s:** Number of backward packets transmitted per second.
-
-    -   **Packet Length Metrics:**
-
-        -   **min_packet_length:** The minimum length of a packet.
-
-        -   **max_packet_length:** The maximum length of a packet.
-
-        -   **packet_length_mean:** The average length of a packet.
-
-        -   **packet_length_std:** The standard deviation length of a packet.
-
-        -   **packet_length_variance:** The variance length of a packet.
-
-    -   **down_up_ratio:** Download and upload ratio.
-
-    -   **average_packet_size:** The average size of a packet.
-
-    -   **avg_fwd_segment_size:** The average size of data segments in the forward direction.
-
-    -   **avg_bwd_segment_size:** The average size of data segments in the backward direction.
-
-    -   **fwd_header_length_62:** Length of a packet header in the forward direction.
-
-    -   **fwd_avg_bytes_bulk:** Average number of bulk bytes rate in the forward direction.
-
-    -   **fwd_avg_packets_bulk:** Average number of bulk packets rate in the forward direction.
-
-    -   **fwd_avg_bulk_rate:** Average number of bulk rate in the forward direction.
-
-    -   **bwd_avg_bytes_bulk:** Average number of bulk bytes rate in the backward direction.
-
-    -   **bwd_avg_packets_bulk:** Average number of bulk packets rate in the backward direction.
-
-    -   **bwd_avg_bulk_rate:** Average number of bulk rate in the backward direction.
-
-    -   **subflow_fwd_packets:** The average number of packets in a sub flow in the forward direction.
-
-    -   **subflow_fwd_bytes:** The average number of bytes in a sub flow in the forward direction.
-
-    -   **subflow_bwd_packets:** The average number of packets in a sub flow in the backward direction.
-
-    -   **subflow_bwd_bytes:** The average number of bytes in a sub flow in the backward direction.
-
-    -   **init_win_bytes_forward:** The total number of bytes sent in initial window in the forward direction.
-
-    -   **init_win_bytes_backward:** The total number of bytes sent in initial window in the **backward** direction.
-
-    -   **act_data_pkt_fwd:** Actual number of packets sent in the forward direction.
-
-    -   **min_seg_size_forward:** Minimum size of the data segment sent in the forward direction.
-
-    -   **Active Metrics :**
-
-        -   **active_mean:** The average time a flow was active before becoming idle.
-
-        -   **active_std:** The standard deviation time a flow was active before becoming idle.
-
-        -   **active_max:** The maximum time a flow was active before becoming idle.
-
-        -   **active_min:** The minimum time a flow was active before becoming idle.
-
-    -   
-
-    <!-- -->
-
-    -   **IDLE Metrics:**
-
-        -   **idle_mean:** The average time a flow was idle before becoming active.
-
-        -   **idle_std:** The standard deviation time a flow was idle before becoming active.
-
-        -   **idle_max:** The maximum time a flow was idle before becoming active.
-
-        -   **idle_min:** The minimum time a flow was idle before becoming active.
-
-    -   
-
--   **Response Variable:**
-
-    -   **label:**
-
-    ```         
-    -   **BENIGN:** Normal legitimate network traffic
-
-    -   **DDoS:** Malicious network traffic.
-    ```
-
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, warnings = FALSE, echo = FALSE}
 # --- loading libraries 
 library(tidyverse) # for extra functions 
 library(janitor) # for column name cleaning 
 library(viridis) # for color palettes 
-library(corrplot) # for correlation plot 
+library(ggcorrplot)# for correlation plot 
 library(ggnewscale) # for extra plot functions 
 library(car) # for VIF function 
 library(scales) # for extra plot functions 
 library(gridExtra) # extra plot functions (grid functions)
 library(grid) # extra plot functions (grids)
+library(kableExtra) # for tables fuctions 
 ```
 
-## 
+\newpage
 
-```{r}
+# **Introduction**
+
+In today's digital landscape, Distributed Denial-of-Service (DDoS) attacks are among the most disruptive cybersecurity threats, impacting organizations across industries, including government agencies, educational institutions, healthcare providers, and businesses that rely on server and network access. These attacks overwhelm a target's network infrastructure with illegitimate traffic, rendering online services inaccessible to legitimate users and other stakeholders. The financial impact of a DDoS attack varies, but according to an insight report published in 2023 by Zayn Group, an attack can last on average around 68 minutes, totalling around \$408,000 per attack, [(Zayo Group (2024))](https://www.zayo.com/newsroom/average-ddos-attack-cost-businesses-nearly-half-a-million-dollars-in-2023-according-to-new-zayo-data/). This figure accounts for lost revenue, cost of detection, recovery, and cybersecurity preventives.
+
+Beyond the immediate disruptions, the long-term consequences of DDoS attacks can be severe. These include brand reputation damage, operational delay, legal ramifications, customer churn, and expensive mitigation efforts. A notable example of such cases occurred in 2011 when Sony's PlayStation (PSN) was hit by a large-scale DDoS Attack, which led to nearly a month of downtime service, [(Garcia, D.M. (2021))](https://wsswired.com/4837/entertainment-3/the-2011-playstation-network-hack-what-actually-happened/). The attack not only caused financial losses but also damaged Sony's reputation, causing many users to migrate to competitors like Steam and Microsoft Xbox Live. This incident underscored how a DDoS attack can erode customer trust and market share, leaving lasting consequences for businesses.
+
+# Dataset Overview
+
+To better understand and model DDoS attacks, we will use the CIC-DDoS2019 dataset that was generated using a [CICFlowMeter-V3](https://www.unb.ca/cic/research/applications.html#CICFlowMeter) which contains 225,745 rows, and 85 various variables that help distinguish between normal and attack-related traffic. Key variables include packet details, communication protocols, TCP flag indicators, and an attack indicator. A detailed description of these variables can be found in Appendix 1.1, and a summary of the dataset is presented in table 1.
+
+By applying an exploratory data analysis (EDA), our goal is to identify patterns that differentiate normal traffic from malicious DDoS activity and explore the distribution of various categorical variables in the dataset. Through this analysis, we aim to develop a model that can provide inference DDoS attacks, helping us fully understand how these attacks occur, and what are some possible mitigation efforts that can be implemented to reduce the significant effects, and how each variable in our dataset explains our target variable.
+
+```{r, warnings = FALSE, message = FALSE, echo = FALSE}
 # ---- loading data 
 DDoS_dataset <- read_csv("Data/Friday-WorkingHours-Afternoon-DDos.pcap_ISCX.csv") %>% clean_names()
-
-# view data 
-head(DDoS_dataset)
 ```
 
-## 3. Data Preprocessing & Preparation 
+# **Data Preprocessing & Preparation**
 
-In this section, we focus primarily on preparing the dataset for analysis and modeling. Data processing is often considered the most crucial stage, as the quality of data directly impacts the accuracy of our model, reliability of the results, reducing overfitting, and mitigation of any unccessary errors. This process includes:
+In this section, we focus primarily on preparing the dataset for analysis and modeling. Data processing is often considered the most crucial stage, as the quality of data directly impacts the accuracy of our model, reliability of the results, reducing overfitting, and mitigation of any unnecessary errors.
 
-**Handling missing values:** Identifying and addressing any missing data to ensure a complete dataset, this also involves dropping columns/variables that contains any extreme amount of null values.
+## **Data cleaning**
 
-**Data transformation:** Converting variables to their respective formats, and possibly scaling the features.
+In the data processing stage, the first task was to re-code the label class, which is our response variable. Initially, the labels were denoted as DDoS and BENIGN, it was re-code to 1 and 0, respectively, to make them more suitable for modeling. Next, 13 of the categorical variables were converted to factor, to ensure efficient usage during the analysis and modeling stage. Through the data cleaning, it was essential to identify potential null values, and any errors that need to be isolated and handled, as often these can negatively affect our analysis. In this case, the dataset did not have any null values, however a number of variables did contain a number of errors.
 
-**Handling class imbalance:** Addressing imbalanced variables often provides beneficial outcomes, as often if a column is imbalanced it may skew the results. In this case, handling this before the modeling phase is essential, in order to mitigate any future issues.
+For instance, flow_packets_s and flow_bytes_s, contained 85 of invalid rows, requiring us to drop them, then correctly converting the variables from char to numeric. Furthermore, these identified columns [fwd_avg_bytes_bulk, fwd_avg_packets_bulk, fwd_avg_bulk_rate, bwd_avg_bytes_bulk, bwd_avg_bulk_rate, and bwd_avg_packets_bulk] only contained zeros or zero variability, requiring the need to drop them as well. Furthermore, two pairs of variables were found to be identical, suggesting a potential issue with the data collection process. Specifically, the pair avg_fwd_segment_size and fwd_packet_length_mean, as well as the pair bwd_packet_length_mean and avg_bwd_segment_size. To address this redundancy and improve the dataset quality, the duplicate variables, avg_fwd_segment_size and avg_fwd_segment_size, were removed.
 
-**Feature selection:** Removing any redundant or non-informative variables that do not contribute to the models performance and results. This includes unique identifying variables such as name, ID, etc.
-
-**Removing highly correlated variables:** Identifying and removing variables that are highly correlated is essential to prevent redundancy, and multicollinearity, which can distort model interpretation and inflate our variance. This would also require us in utilizing VIF (Variance Inflation Factor) later on to track if our model overfitting, and impact the performance.
-
-#### **3.1 Handling any possible missing values:** 
-
-```{r}
-# --- check for null values 
-cat(paste("Total null values found:", sum(is.na(DDoS_dataset))))
-```
-
-#### **3.2 Data transformation:**
-
--   The label class, which is our target variable is currently labeled as DDoS, and BENIGN. We would then re-code as DDoS = 1, and BENIGN = 0.
-
--   Converting several variables as factors, as they represent categorical data that will be used in the modeling stage.
-
-```{r}
+```{r, warnings = FALSE, echo = FALSE}
 # recode label variable to 1 and 0.
 DDoS_dataset <- DDoS_dataset %>%
-  mutate(label = dplyr::recode(label, "DDoS" = 1, "BENIGN" = 0))
-cat("Recoded label variable to 1 and 0.\n")
+  mutate(label = ifelse(label %in% c("DDoS", "BENIGN"),
+                        dplyr::recode(label, "DDoS" = 1, "BENIGN" = 0),
+                        label))
 
 # converting several variables to factor 
 DDoS_dataset <- DDoS_dataset %>%
@@ -286,49 +79,47 @@ DDoS_dataset <- DDoS_dataset %>%
     syn_flag_count = as.factor(syn_flag_count),
     rst_flag_count = as.factor(rst_flag_count),
     psh_flag_count = as.factor(psh_flag_count),
+    ack_flag_count = as.factor(ack_flag_count),
     urg_flag_count = as.factor(urg_flag_count),
     cwe_flag_count = as.factor(cwe_flag_count),
     ece_flag_count = as.factor(ece_flag_count),
+    flow_packets_s = as.numeric(flow_packets_s),
+    flow_bytes_s = as.numeric(flow_bytes_s)
   )
-cat("Converted relevant variables to factors.\n")
 
+DDoS_dataset <- DDoS_dataset %>%
+  filter(is.finite(as.numeric(as.character(flow_packets_s))) & 
+         is.finite(as.numeric(as.character(flow_bytes_s))))
+
+# --- check for null values 
+null_value <- sum(is.na(DDoS_dataset))
 ```
 
-#### **3.3 Handling class imbalance:** 
+## **Handling class imbalance**
 
-"As mentioned before, handling class imbalance is a vital process, often requiring an in-depth analysis of the underlying factors contributing to the imbalance. In the context of the DDoS dataset, one of the primary features where imbalance is observed is in the **protocol** column. This column likely contains values representing different network protocols (e.g., TCP, UDP, ICMP) used in network traffic.
+In this section, we primarily explore the number of categorical variables in our dataset and examine how the distribution varies. Looking at our response variable, Label, we can see that it is fairly balanced, with the following distribution illustrated in fig 1 and table 2. In the CIC-DDoS2019 dataset, several categorical variables exhibit significant imbalance and incompleteness, which can skew model results, and lead to suboptimal performance. One such variable is the protocol variable, which represents different network protocols used. As the protocols used when the label is "BENIGN", is fairly distributed through protocol "0", "6" and "17", however, the the label is "DDoS", the distribution is significantly underrepresented, or in this case entirely absent in protocols "0" and "17", this is illustrated in figure 2 and table 3.
 
-A closer look at the distribution of values within the **protocol** column reveals significant disparities between different classes. For example, in one set of data, we might observe counts like the following:
+This pattern of imbalance is also observed in several other categorical variables, as illustrated in Figure 3, which shows the distribution of flag counts, and figure 4, which displays the distribution of the PSH/URG flags in FWD/BWD. Due to this imbalance and the presence of incomplete data, we must drop most of the variables shown in these figures 3 and 4. The only exceptions are PSH Flag Count and ACK Flag Count, as they are the only categorical variables that remain fairly balanced and complete.
 
-In this case, the **BENIGN** class (label 0) is heavily underrepresented for certain protocol types, while **DDoS** attacks (label 1) dominate specific protocols. This imbalance is further amplified when considering the disproportionate distribution of attacks across different protocols. The **DDoS** class, for instance, may have an overwhelming presence in some protocols (such as Protocol 1), while others may show almost no attacks. This indicates that certain network protocols are more susceptible to DDoS attacks, which has critical implications for identifying and mitigating potential threats in real-world settings.
+Furthermore, based on figure 3 both PSH and ACK flag counts show a notable association when flagged, with distinguishing between BENIGN and DDoS traffic. These flags are more frequently observed in DDoS traffic, with PSH flags appearing in 58,185 instances compared to 21,088 in BENIGN traffic. Similarly, ACK flags occur in 70,006 instance of DDoS traffic, compared to 43,845 in BENIGN traffic.
 
-Thus, an effective approach to addressing this imbalance must consider the **protocol** column's distribution. Techniques like **oversampling**, **undersampling**, or **adjusting class weights** during model training could be employed to mitigate the impact of this imbalance. Additionally, **feature engineering** methods such as protocol-specific weighting could help the model focus more on the minority class (e.g., DDoS) while still capturing key information across all protocols."
+To formaly test for a significant association, I conducted a Pearson’s Chi-squared. The results indicate a strong association between PSH flag count and label: $(\chi^2 = 13843,\ df =1, \ \text{p-value}=2.2e-16)$ , as well as between ACK flag count and label: $(\chi^2 = 2127.4,\ df =1,\  \text{p-value}=2.2e-16)$.
 
-In this, we can observe that **BENIGN class (label 0) is heavily underrepresented certain cases when the protocol used is "6". However, this is not the case for the DDoS (label 1), when the protocol used is "0" and "17",**
+```{r,warnings = FALSE, echo = FALSE, results=FALSE}
+# contingency table for lable and psh flag count 
+psh_flag <- table(DDoS_dataset$psh_flag_count, DDoS_dataset$label)
 
-```{r}
-# 
-table(DDoS_dataset$label, DDoS_dataset$protocol)
+# Perform Chi-Squared test
+chisq.test(psh_flag)
+
+# contingency table for lable and ack flag count 
+ack_flag <- table(DDoS_dataset$ack_flag_count, DDoS_dataset$label)
+
+# Perform Chi-Squared test
+chisq.test(psh_flag)
 ```
 
-```{r}
-# bar plot of target and protocol distribution
-ggplot(DDoS_dataset, aes(x = as.factor(protocol), fill = as.factor(label))) +
-  geom_bar(color = "black", alpha = 0.7, linewidth = 0.3) +
-  labs(title = "Figure 2: Distribution of DDoS Attack Labels by Protocol", x = "Protocol", y = "Count") +
-  theme_minimal() +
-  scale_fill_manual(values = c("0" = "blue", "1" = "red"), 
-                    labels = c("0" = "BENIGN", "1" = "DDoS"),
-                    guide = guide_legend(title = NULL)) +
-  scale_y_continuous(labels = scales::comma)
-
-# Issues protocol variable 
-# When "0", BENIGN is 54, while DDoS is 0. 
-# When "6", BENIGN is 64793, while DDoS is 128027. 
-# When "17", BENIGN is 32871, while DDoS is 0. 
-```
-
-```{r}
+```{r,warnings = FALSE, echo = FALSE}
 # Define the plots for syn_flag_count
 plot1 <- ggplot(DDoS_dataset, aes(x = as.factor(syn_flag_count), fill = as.factor(label))) +    
   geom_bar(stat = "count", position = "dodge", alpha = 0.7) +
@@ -392,17 +183,29 @@ plot7 <- ggplot(DDoS_dataset, aes(x = as.factor(ece_flag_count), fill = as.facto
   scale_y_continuous(labels = label_comma()) +  
   theme(legend.position = "none", axis.title.x = element_text(size = 9))
 
+
+plot8 <- ggplot(DDoS_dataset, aes(x = as.factor(fin_flag_count), fill = as.factor(label))) +    
+  geom_bar(stat = "count", position = "dodge", alpha = 0.7) +
+  labs(x = "FIN Flag Count", y = "Count", fill = "Label") +
+  theme_minimal() +
+  scale_fill_manual(values = c("blue", "red")) +
+  scale_y_continuous(labels = label_comma()) +  
+  theme(legend.position = "none", axis.title.x = element_text(size = 9))
+
 # Define the plots for dummyplot1 to extract legend 
-dummyplot1 <- ggplot(DDoS_dataset, aes(x = as.factor(syn_flag_count), fill = as.factor(label))) +
+dummyplot1 <- ggplot(DDoS_dataset, aes(x = as.factor(syn_flag_count), 
+                                       fill = as.factor(label))) +
   geom_bar(stat = "count", position = "dodge", alpha = 0.7) +
   scale_fill_manual(values = c("0" = "blue", "1" = "red"),  
                     labels = c("0" = "BENIGN", "1" = "DDoS"),
-                    guide = guide_legend(title = NULL)) + 
+                    guide = guide_legend(title = "Label", direction = "horizontal")) + 
   theme_minimal() + 
-  guides(fill = guide_legend(title = "Label", 
-                             ncol = 2, 
+  guides(fill = guide_legend(title = "Label",
                              title.position = "top", 
-                             title.hjust = 0.5))  
+                             title.hjust = 0.5)) +
+  theme(legend.position = "bottom")
+ 
+
 # function to extract the legend
 g_legend <- function(a.gplot) {
   tmp <- ggplot_gtable(ggplot_build(a.gplot))
@@ -410,18 +213,10 @@ g_legend <- function(a.gplot) {
   tmp$grobs[[leg]]
 }
 legend <- g_legend(dummyplot1)
+
 ```
 
-```{r}
-# Arrange the plots into a grid, leaving the last column for the legend
-grid.arrange(
-  plot1, plot2, plot3, plot4, plot5, plot6, plot7, legend,
-  ncol = 2,  # Set 3 columns
-  top = textGrob("Figure 3: Distribution of Flag Counts By Label", gp = gpar(fontsize = 10, fontface = "bold"))
-)
-```
-
-```{r}
+```{r,warnings = FALSE, echo = FALSE}
 # Helper function to extract the legend
 g_legend <- function(a.gplot) {
   tmp <- ggplot_gtable(ggplot_build(a.gplot))
@@ -482,176 +277,1044 @@ dummyplot2 <- ggplot(DDoS_dataset, aes(x = fwd_psh_flags, fill = as.factor(label
 legend <- g_legend(dummyplot2)
 ```
 
-```{r}
-# Arrange the plots into a grid and add the title
-grid.arrange(
-  plot_1, plot_2, plot_3, plot_4,
-  ncol = 2,
-  top = textGrob("Figure 4: Distribution of PSH/URG Flags in the FWD & BWD", gp = gpar(fontsize = 10, fontface = "bold")),  # Adding a title at the top
-  bottom = legend  # Adding the shared horizontal legend at the bottom
-)
+```{r, warnings = FALSE, echo = FALSE, results = FALSE}
+# function to check zero variability due to constant only zeros  
+check_zero_columns <- function(data) {
+  zero_cols <- sapply(data, function(col) all(col == 0, na.rm = TRUE))
+  return(names(data)[zero_cols])
+}
+
+# define the columns from the function 
+zero_columns <- check_zero_columns(DDoS_dataset)
+
+# Print columns that contain only zeros
+if (length(zero_columns) > 0) {
+  print(paste("Columns with only zeros:", paste(zero_columns, collapse = ", ")))
+} else {
+  print("No columns contain only zeros.")
+}
 ```
 
-```{r}
+```{r, warnings = FALSE, echo = FALSE}
+# dropping due to imbalance and zero variability issues
+# 17 total protocol, fin_flag_count, syn_flag_count urg_flag_count
+# ece_flag_count, rst_flag_count, cwe_flag_count, fwd_psh_flags, bwd_psh_flags
+# fwd_urg_flags, bwd_urg_flags, fwd_avg_bytes_bulk, fwd_avg_packets_bulk
+# fwd_avg_bulk_rate, bwd_avg_bytes_bulk, bwd_avg_bulk_rate, bwd_avg_packets_bulk 
 
-  
-# dropping due to imbalance issue 
-' 14 total 
-syn_flag_count
-urg_flag_count
-ece_flag_count
-rst_flag_count
-cwe_flag_count
-fwd_psh_flags 
-bwd_psh_flags
-fwd_urg_flags
-bwd_urg_flags
-fwd_avg_bytes_bulk
-fwd_avg_packets_bulk
-fwd_avg_bulk_rate
-bwd_avg_bytes_bulk
-bwd_avg_bulk_rate' 
-
-
-# check values for each of these variables 
-summary(DDoS_dataset)
-
-DDoS_dataset %>% 
-  select(fwd_psh_flags, fwd_urg_flags, bwd_urg_flags, fwd_avg_bytes_bulk, 
-         fwd_avg_packets_bulk, fwd_avg_bulk_rate, bwd_avg_bytes_bulk, bwd_avg_bulk_rate) %>%
-  summary()
-
-# we note that in this section we will explore a few variables that will be dropped due to their lack of importance in the later stage of analysis and modeling building. This will further include variables that contain only zero, and at later stage, we will conduct further analysis on any imbalanced variables. 
-
-lm <- glm(label ~ flow_duration, data = DDoS_dataset, family = "binomial")
-
-summary(lm)
-
-unique(DDoS_dataset$label)
-```
-
-we note that in this section we will explore a few variables that will be dropped due to their lack of importance in the later stage of analysis and modeling building. This will further include variables that contain only zero, and at later stage, we will conduct further analysis on any imbalanced variables.
-
-Remove unique ID columns
-
--   flow_id
-
--   source_ip
-
--   source_port
-
--   destination_ip
-
--   destination_port
-
--   timestamp, keeping for analysis purposes, will be dropped during model building.
-
-```{r}
 # --- remove unwanted variables 
-DDoS_dataset <- DDoS_dataset %>%
+DDoS_dataset0 <- DDoS_dataset %>%
   select(-flow_id, -source_ip, 
          -source_port, -destination_ip, 
-         -destination_port)
+         -destination_port, -timestamp,
+         -protocol, -syn_flag_count, 
+         -fin_flag_count, -urg_flag_count, 
+         -ece_flag_count, -rst_flag_count, 
+         -cwe_flag_count, -fwd_psh_flags, 
+         -bwd_psh_flags, -fwd_urg_flags, 
+         -bwd_urg_flags, -fwd_avg_bytes_bulk, 
+         -fwd_avg_packets_bulk, -fwd_avg_bulk_rate, 
+         -bwd_avg_bytes_bulk, -bwd_avg_bulk_rate, 
+         -bwd_avg_packets_bulk, -init_win_bytes_forward,
+         -init_win_bytes_backward)
 ```
 
-## 4. Data Analysis
+# Descriptive Statistics 
 
-### 4.1 Correlation Matrix
+In the summary statistics printed below, I've highlighted a few variables that raised concerns due to their extreme and invalid values. Specifically, flow_duration, flow_bytes_s, and flow_packets_s contained invalid values such as -1 and -2e+06, which are likely due to the data collection process. Additionally, init_win_bytes_backward and init_win_bytes_forward exhibited -1 values in approximately 50% of the rows. Since it was unclear whether these values should be converted to 0 or +1, and given their limited variability, I decided to drop these two variables from further analysis. Furthermore, much of the numeric variables displayed extreme right-skewness, which can obscure meaningful patterns. To address this, I've removed the invalid values and applied a log transformation to normalize the distributions. This adjustment provided a clearer visualization of traffic patterns, as seen in the box-plots in figure 5.
 
-In this section, creating a correlation matrix
+We can observe how DDoS traffic tends to have significantly longer flow duration in comparison to benign traffic, this is a distinguishing factor, as DDoS flows persist longer on average, with a higher median value. Furthermore, the median for the flow bytes per second is noticeably higher for DDoS traffic, reflecting the heavy bandwidth consumption typical for high volume attacks. Interestingly, flow packets per second shows a different trend, in comparison to flow bytes per second. To which the median value is actually lower for DDoS traffic than for benign traffic. However, this does not mean that DDoS attacks always have low packet rates, as the presence of numerous outliers suggest that certain attacks involve bursts of packets, which is often a characteristic of packet-flooding techniques.
 
-### 4.2 Data Viz
+```{r, warnings = FALSE, echo = FALSE}
+print_summary <- function(data, var_name) {
+  cat("\n Summary Statistics of", var_name, "\n")
+  cat("-------------------------------------------------\n")
+  summary_output <- capture.output(summary(data))
+  cat(paste(summary_output, collapse = "\n"), "\n")
+}
 
-```{r}
-# Plot the distribution of the 'Target' variable
+# Print summaries for selected variables
+print_summary(DDoS_dataset0$flow_duration, "Flow Duration")
+print_summary(DDoS_dataset0$flow_bytes_s, "Flow Bytes per Second")
+print_summary(DDoS_dataset0$flow_packets_s, "Flow Packets Per Second")
+print_summary(DDoS_dataset0$fwd_packets_s, "Foward Packets Per Second")
+print_summary(DDoS_dataset0$bwd_packets_s, "Backward Packets Per Second")
+```
 
+```{r,warnings = FALSE, echo = FALSE}
+# Boxplot for flow_duration after log transformation
+box1 <- DDoS_dataset0 %>% 
+  filter(flow_duration != -1) %>% 
+  mutate(
+    Q5 = quantile(flow_duration, 0.05, na.rm = TRUE),
+    Q95 = quantile(flow_duration, 0.95, na.rm = TRUE)
+  ) %>% 
+  filter(flow_duration >= Q5 & flow_duration <= Q95) %>% 
+  ggplot(aes(x = factor(label), y = log(flow_duration), fill = factor(label))) +
+  geom_boxplot(alpha = 0.8) + 
+  labs(title = "",
+       x = "Label",
+       y = "Log(Flow Duration)") +
+  scale_fill_manual(values = c("0" = "blue", "1" = "red"),
+                    labels = c("0" = "BENIGN", "1" = "DDoS")) +
+  theme_minimal() + theme(legend.position = "none",
+        axis.title.y = element_text(size = 13))
+
+# Boxplot for flow_bytes_s after log transformation
+box2 <- DDoS_dataset0 %>% 
+  filter(flow_bytes_s > 0) %>% 
+  mutate(
+    Q5 = quantile(flow_bytes_s, 0.05, na.rm = TRUE),
+    Q95 = quantile(flow_bytes_s, 0.95, na.rm = TRUE)
+  ) %>% 
+  filter(flow_bytes_s >= Q5 & flow_bytes_s <= Q95) %>% 
+  ggplot(aes(x = factor(label), y = log(flow_bytes_s), fill = factor(label))) +
+  geom_boxplot(alpha = 0.8) + 
+  labs(title = "",
+       x = "Label",
+       y = "Log(Flow Bytes/s)") +
+  scale_fill_manual(values = c("0" = "blue", "1" = "red"),
+                    labels = c("0" = "BENIGN", "1" = "DDoS")) +
+  theme_minimal() + theme(legend.position = "none",
+        axis.title.y = element_text(size = 13))
+
+# Boxplot for flow_packets_s after log transformation
+box3 <- DDoS_dataset0 %>% 
+  filter(flow_packets_s > 0) %>% 
+  mutate(
+    Q5 = quantile(flow_packets_s, 0.05, na.rm = TRUE),
+    Q95 = quantile(flow_packets_s, 0.95, na.rm = TRUE)
+  ) %>% 
+  filter(flow_packets_s >= Q5 & flow_packets_s <= Q95) %>% 
+  ggplot(aes(x = factor(label), y = log(flow_packets_s), fill = factor(label))) +
+  geom_boxplot(alpha = 0.8) + 
+  labs(title = "",
+       x = "Label",
+       y = "Log(Flow Packets/s)") +
+  scale_fill_manual(values = c("0" = "blue", "1" = "red"),
+                    labels = c("0" = "BENIGN", "1" = "DDoS")) +
+  theme_minimal() + theme(legend.position = "none",
+        axis.title.y = element_text(size = 13))
+
+dummyplot0 <- DDoS_dataset0 %>% 
+  filter(flow_packets_s > 0) %>% 
+  mutate(
+    Q5 = quantile(flow_packets_s, 0.05, na.rm = TRUE),
+    Q95 = quantile(flow_packets_s, 0.95, na.rm = TRUE)
+  ) %>% 
+  filter(flow_packets_s >= Q5 & flow_packets_s <= Q95) %>% 
+  ggplot(aes(x = factor(label), y = log(flow_packets_s), fill = factor(label))) +
+  geom_boxplot(alpha = 0.8) + 
+  labs(title = "",
+       x = "Label",
+       y = "Log(flow_packets_s)") +
+  scale_fill_manual(values = c("0" = "blue", "1" = "red"),
+                    labels = c("0" = "BENIGN", "1" = "DDoS"),
+                    guide = guide_legend(title = "Label", 
+                                         title.position = "top", 
+                                         direction = "horizontal")) +
+  theme_minimal()
+
+legend0 <- g_legend(dummyplot0)
+```
+
+# **Correlation Analysis**
+
+During an exploratory data analysis, it's essential to thoroughly investigate the variables within the dataset. As the data. The CIC-DDoS2019 dataset, gathered using CICFlowMeter-V3, includes a broad array of features, many of which are statistical summaries captured as individual variables. For example, features such as the mean, maximum, minimum, and standard deviation of packet lengths are recorded as separate variables, providing a detailed overview of the network flow characteristics. While these variables offer valuable insights, they can also introduce redundancy or multicollinearity, which may impact our model performance and lead to overfitting.
+
+To highlight this, Figure 6 illustrates a correlation matrix heat map for a subset of 30 variables, providing valuable insights into the relationships between variables and highlights areas of concern, such as near-perfect correlations that suggest redundancy. This subset was chosen to make the correlation matrix more digestible while emphasizing key variables, while the remaining 29 variables will also be analyzed to identify any that may need to be dropped or transformed to improve model robustness.
+
+For instance, flow_duration is strongly correlated with both flow_iat_max (0.92) and flow_iat_total (0.99), as further demonstrated in Figures 7 and 8. This insight underscores the need for careful variable selection to enhance model accuracy and avoid potential multicollinearity.
+
+```{r,warnings = FALSE, echo = FALSE}
+# Select only numeric variables + label
+cor_matrix <- DDoS_dataset0 %>%
+  mutate(label = as.numeric(as.factor(label)) - 1) %>%
+  select_if(is.numeric) %>%
+  select(1:29, label) %>%
+  cor()
+
+# Select full numeric variables + label
+cor_matrixFull <- DDoS_dataset0 %>%
+  mutate(label = as.numeric(as.factor(label)) - 1) %>%
+  select_if(is.numeric) %>%
+  cor()
+```
+
+```{r,warnings = FALSE, echo = FALSE}
+# highlighting high correlated variables from the 30 variables  
+high_corr <- cor_matrix %>% 
+  as.data.frame() %>% 
+  mutate(row = rownames(cor_matrix)) %>%
+  gather(key = "variable", value = "correlation", -row) %>%
+  filter(abs(correlation) >= 0.9 & correlation != 1)
+
+# highlighting high correlated variables from the full dataset
+high_corrFull <- cor_matrixFull %>% 
+  as.data.frame() %>% 
+  mutate(row = rownames(cor_matrixFull)) %>%
+  gather(key = "variable", value = "correlation", -row) %>%
+  filter(abs(correlation) >= 0.9 & correlation != 1)
+```
+
+# Key Findings
+
+At this stage, we have identified 25 variables that will not be included in the remaining analysis, these exclusions are due to factors such as extreme imbalance, incomplete data, and/or containing only zero values. Additionally, identifier columns have been removed as they do not contribute to the remaining analysis. While in our descriptive statistics and correlation analysis, we had highlighted the need for careful assessment in selecting variables, and how much of them require transformation effects to address the extreme skewness in their distribution. As cleaning and transforming these variables have been particularly useful in distinguishing key differences between DDoS and BENIGN traffic, revealing patterns that were previously obscured. For future work, I will further assess these variables through the modeling and selection phase, ensuring that only the most informative features are retained.
+
+\newpage
+
+# **Data Visualization Figures & Tables** 
+
+```{r, warnings = FALSE, echo = FALSE, results="asis"}
+# Defining summary table
+summary_table <- data.frame(
+  c("Total number of records:", 
+    "Total number of Variables (columns):", 
+    "Total number of Continuous variables:", 
+    "Total number of Categorical variables:", 
+    "Instances of BENIGN (class 0):", 
+    "Instances of DDoS (class 1):"),
+  c("225,745","85","65","13","97,718","128,027")
+)
+
+# Generate table and force it to stay on one page
+kable(summary_table, format = "latex", booktabs = TRUE, col.names = NULL,
+      caption = "CIC-DDoS2019 Dataset Structure and Class Distribution \\label{tab:summary}") %>%
+  kable_styling(latex_options = c("striped", "scale_down")) %>%
+  kable_styling(position = "center")  
+```
+
+```{r, warnings = FALSE, echo = FALSE, results="asis"}
+# Table of label distribution
+kable(table(DDoS_dataset$label), format = "latex", 
+      caption = "Distribution of Attack Label \\label{tab:label_distribution}",
+      col.names = c("Label","Instances"), booktabs = TRUE) %>%
+  kable_styling(latex_options = c("striped", "scale_down"), position = "center")
+```
+
+```{r, warnings = FALSE, echo = FALSE, results="asis"}
+# Table of label and protocol
+kable(table(DDoS_dataset$label, DDoS_dataset$protocol), format = "latex", 
+      caption = "Distribution of Label and Protocol \\label{tab:label_protocol}",
+      col.names = c("Label","Protocol: 0","Protocol: 6","Protocol: 17"), 
+      booktabs = TRUE) %>%
+  kable_styling(latex_options = c("striped", "scale_down"), position = "center")
+
+```
+
+```{r, warnings = FALSE, echo = FALSE, fig.align = "center"}
 # bar plot of target distribution  
 ggplot(DDoS_dataset, aes(x = as.factor(label))) +
   geom_bar(aes(fill = as.factor(label)), color = "black", alpha = 0.8, linewidth = 0.3) +
-  labs(title = "Distribution of DDoS Attack Labels", x = "", y = "Count") +
+  labs(title = "Figure 1:  Distribution of DDoS Attack Labels", x = "", y = "Count") +
   theme_minimal() +
   scale_fill_manual(values = c("0" = "blue", "1" = "red"), 
                     labels = c("0" = "BENIGN", "1" = "DDoS"),
-                    guide = guide_legend(title = NULL)) +  # Remove legend title
+                    guide = guide_legend(title = NULL)) +
+  scale_y_continuous(labels = scales::comma)
+```
+
+```{r, warnings = FALSE, echo = FALSE, fig.align = "center"}
+# bar plot of target and protocol distribution
+ggplot(DDoS_dataset, aes(x = as.factor(protocol), fill = as.factor(label))) +
+  geom_bar(color = "black", alpha = 0.7, linewidth = 0.3) +
+  labs(title = "Figure 2: Distribution of DDoS Attack Labels by Protocol", x = "Protocol", y = "Count") +
+  theme_minimal() +
+  scale_fill_manual(values = c("0" = "blue", "1" = "red"), 
+                    labels = c("0" = "BENIGN", "1" = "DDoS"),
+                    guide = guide_legend(title = NULL)) +
   scale_y_continuous(labels = scales::comma)
 
-
+# Issues protocol variable 
+# When "0", BENIGN is 54, while DDoS is 0. 
+# When "6", BENIGN is 64793, while DDoS is 128027. 
+# When "17", BENIGN is 32871, while DDoS is 0. 
 ```
 
-```{r}
-ggplot() + 
-  geom_point(data = DDoS_dataset[DDoS_dataset$label == 0, ], 
-             aes(x = flow_duration, y = fwd_iat_total, color = "BENIGN"), 
-             alpha = 0.6, size = 2) +  # Color for label 0
-  geom_point(data = DDoS_dataset[DDoS_dataset$label == 1, ], 
-             aes(x = flow_duration, y = fwd_iat_total, color = "DDoS"), 
-             alpha = 0.8, size = 2.5) +  # Color for label 1
-  scale_color_manual(values = c("BENIGN" = "blue", "DDoS" = "red")) +  # Custom color mapping
-  theme_minimal() +
-  labs(title = "Flow Duration vs FWD IAT Total", x = "Flow Duration", y = "FWD IAT Total") + 
-  theme(legend.title = element_blank()) 
-
+```{r, warnings = FALSE, echo = FALSE, fig.height = 8, fig.width = 9, fig.align = "center"}
+# Using grid.arrange for plots for flag counts 
+grid.arrange(
+  arrangeGrob(plot1, plot2, plot3, plot4, plot5, plot6, plot7, plot8, ncol = 2),
+  legend,
+  ncol = 1,
+  heights = c(10, 1),
+  top = textGrob("Figure 3: Distribution of Flag Counts By Label", gp = gpar(fontsize = 10, fontface = "bold"))
+)
 ```
 
-```{r}
-
-ggplot() + 
-  geom_point(data = DDoS_dataset[DDoS_dataset$label == 0, ], 
-             aes(x = total_fwd_packets, y = total_backward_packets, color = "BENIGN"), 
-             alpha = 0.6, size = 2) +  # Color for label 0
-  geom_point(data = DDoS_dataset[DDoS_dataset$label == 1, ], 
-             aes(x = total_fwd_packets, y = total_backward_packets, color = "DDoS"), 
-             alpha = 0.8, size = 2.5) +  # Color for label 1
-  scale_color_manual(values = c("BENIGN" = "blue", "DDoS" = "red")) +  # Custom color mapping
-  theme_minimal() +
-  labs(title = "Total Forward Packets vs Total Backward Packets", 
-       x = "Total Forward Packets", y = "Total Backward Packets") + 
-  theme(legend.title = element_blank())  # Remove legend title
-
+```{r, warnings = FALSE, echo = FALSE, fig.height = 8, fig.width = 9, fig.align = "center"}
+# Using grid.arrange for plotsgrid.arrange for flags 
+grid.arrange(
+  arrangeGrob(plot_1, plot_2, plot_3, plot_4,
+  ncol = 2,
+  top = textGrob("Figure 4: Distribution of PSH/URG Flags in the FWD & BWD", 
+                 gp = gpar(fontsize = 10, fontface = "bold")),
+  bottom = legend))
 ```
 
-```{r}
-
-ggplot(DDoS_dataset, aes(x = packet_length_std, y = packet_length_variance, colour = as.factor(label))) + 
-  geom_point(alpha = 0.6, size = 2, position = "identity") +  # Set transparency for all points
-  scale_color_manual(values = c("1" = "red", "0" = "blue")) +  # Reverse color mapping
-  theme_minimal() +  # Clean theme
-  labs(title = "Packet Length Std vs Packet Length Variance", x = "Packet Length Std", y = "Packet Length Variance Total") +  # Labels
-  theme(legend.title = element_blank(),  # Remove legend title
-        legend.key = element_rect(color = "black"))
+```{r, warnings = FALSE, echo = FALSE, fig.height = 12, fig.width = 12, fig.align = "center"}
+# Boxplots arranged with dummy legend
+grid.arrange(
+  box1, box2, box3,
+  ncol = 1,
+  top = textGrob("Figure 5: Boxplots of Selected Variables After Transformation", 
+                 gp = gpar(fontsize = 15, fontface = "bold")),
+  bottom = legend0 # Adjust the height of the legend to make it smaller
+)
 ```
 
-```{r}
-
-
-
-
-numeric_columns <- DDoS_dataset %>% select(where(is.numeric))
-
-# Compute the correlation matrix for numeric variables
-matriz_cor <- cor(numeric_columns)
-
-sd_values <- sapply(numeric_columns, sd)
-
-# Check which variables have a standard deviation of zero
-zero_sd_vars <- names(sd_values[sd_values == 0])
-
-# Print the variables with zero standard deviation
-print(zero_sd_vars)
-
-# fwd_psh_flags, 
-
-# drop as only contains 0's and will not be important for the project 
-# bwd_psh_flags, fwd_urg_flags, bwd_urg_flags
-
-
-
+```{r, warnings = FALSE, echo = FALSE, fig.height = 8, fig.width = 9, fig.align = "center"}
+# Using ggcorrplot to plot correlation matrix of subset 30 variables 
+ggcorrplot(cor_matrix, method = "square",
+           type = "full",
+           lab = TRUE,
+           lab_size = 1.8,
+           tl.srt = 50,  
+           tl.cex = 9,  
+           title = "Figure 6: Correlation Matrix Heat Map Of 30 Variables",
+           ggtheme = theme_gray(),
+           colors = c("blue", "lightgrey", "red"))
 ```
 
-## 5. Reference list
+```{r, warnings = FALSE, echo = FALSE}
+# Print top portion of high correlation table
+head(high_corr) %>%
+  kable(format = "latex", 
+        caption = "Printed Head Portion of High Correlation Variables (|Correlation| >= 0.9) \\label{tab:high_corr}",
+        booktabs = TRUE) %>%
+  kable_styling(latex_options = c("striped", "scale_down"), position = "center")
+```
+
+```{r,warnings = FALSE, echo = FALSE, fig.height = 8, fig.width = 9, fig.align = "center"}
+# scatter plot of flow_duration and flow_iat_max facet wrapped by label
+ggplot(DDoS_dataset, aes(x = flow_duration, y = flow_iat_max, color = factor(label))) +
+  geom_point(alpha=0.4, size =0.7) +  # Line plot
+  labs(title = "Figure 7:  Scatter Plot of Flow duration and Flow Iat Max by label",
+       subtitle = "Correlation: 0.92",
+       x = "Flow Duration",
+       y = "Flow IAT MAX") +
+  scale_color_manual(
+    values = c("0" = "blue", "1" = "red"),  
+    labels = c("0" = "BENIGN", "1" = "DDoS"),  
+    name = "Label") + 
+  guides(color = guide_legend(override.aes = list(size = 4))) + 
+  facet_wrap(~ label, nrow = length(unique(DDoS_dataset$label))) + 
+  scale_x_continuous(labels = scales::comma) + 
+  scale_y_continuous(labels = scales::comma) +
+  theme_minimal()
+```
+
+```{r,warnings = FALSE, echo = FALSE, fig.height = 8, fig.width = 9, fig.align = "center"}
+# scatter plot of flow_duration and fwd_iat_total facet wrapped by label
+ggplot(DDoS_dataset, aes(x = flow_duration, y = fwd_iat_total, color = factor(label))) +
+  geom_point(alpha=0.4, size =0.7) +  # Line plot
+  labs(title = "Figure 8:  Scatter Plot of Flow duration and Flow Iat Total by label",
+       subtitle = "Correlation: 0.99",
+       x = "Flow Duration",
+       y = "Flow IAT Total") +
+  scale_color_manual(
+    values = c("0" = "blue", "1" = "red"),  
+    labels = c("0" = "BENIGN", "1" = "DDoS"),  
+    name = "Label") +   
+  guides(color = guide_legend(override.aes = list(size = 4))) + 
+  facet_wrap(~ label, nrow = length(unique(DDoS_dataset$label))) + 
+  scale_x_continuous(labels = scales::comma) + 
+  scale_y_continuous(labels = scales::comma) +
+  theme_minimal()
+```
+
+# **Reference list**
 
 -   Zayo Group (2024) *Average ddos attack cost businesses nearly half a million dollars in 2023, according to New Zayo Data: Press release: Zayo*, *Zayo.com*. Available at: <https://www.zayo.com/newsroom/average-ddos-attack-cost-businesses-nearly-half-a-million-dollars-in-2023-according-to-new-zayo-data/> (Accessed: 18 March 2025).
 
 -   Garcia, D.M. (2021) *The 2011 PlayStation Network Hack – what actually happened?*, *WestSide Story*. Available at: <https://wsswired.com/4837/entertainment-3/the-2011-playstation-network-hack-what-actually-happened/> (Accessed: 18 March 2025).
 
-## 6. Index 
+# **Appendix**
+
+## **Appendix 1.1: CIC-DDoS2019 Dataset Attributes Details**
+
+```{r, warnings = FALSE, echo = FALSE, results="asis"}
+# Create the data frame for table: 2
+data <- data.frame(
+  Variable_Name = c("flow_id", "source_ip", "source_port", "destination_ip", 
+                    "destination_port", "timestamp","protocol","fin_flag_count",
+                    "syn_flag_count", "rst_flag_count", "psh_flag_count", "ack_flag_count", 
+                    "urg_flag_count", "cwe_flag_count","ece_flag_count","fwd_psh_flags",
+                    "bwd_psh_flags", "fwd_urg_flags", "bwd_urg_flags", "flow_duration", 
+                    "total_fwd_packets", "total_backward_packets",
+                    "total_length_of_fwd_packets","fwd_packet_length_max",
+                    "fwd_packet_length_min", "fwd_packet_length_mean", 
+                    "fwd_packet_length_std", "bwd_packet_length_max", 
+                    "bwd_packet_length_min", "bwd_packet_length_min",
+                    "bwd_packet_length_mean","bwd_packet_length_std",
+                    "flow_bytes_s", "flow_packets_s", "flow_iat_mean", "flow_iat_std", 
+                    "flow_iat_max", "flow_iat_min","fwd_iat_total","fwd_iat_mean",
+                    "fwd_iat_std", "fwd_iat_max", "fwd_iat_min", "bwd_iat_total", 
+                    "bwd_iat_mean", "bwd_iat_std","bwd_iat_max","bwd_iat_min",
+                    "fwd_header_length_41", "bwd_header_length", 
+                    "fwd_packets_s", "bwd_packets_s","min_packet_length", 
+                    "max_packet_length", "packet_length_mean","packet_length_std",
+                    "packet_length_variance","down_up_ratio","average_packet_size",
+                    "avg_fwd_segment_size", "avg_bwd_segment_size", 
+                    "fwd_header_length_62", "fwd_avg_bytes_bulk","fwd_avg_packets_bulk",
+                    "fwd_avg_bulk_rate", "bwd_avg_bytes_bulk","bwd_avg_packets_bulk",
+                    "bwd_avg_bulk_rate","subflow_fwd_packets","subflow_fwd_bytes",
+                    "subflow_bwd_packets","subflow_bwd_bytes","init_win_bytes_forward",
+                    "init_win_bytes_backward","act_data_pkt_fwd","min_seg_size_forward",
+                    "active_mean","active_std","active_max","active_min","idle_mean",
+                    "idle_std","idle_max","idle_min",
+                    "label"),
+  Type = c(rep("Identifier", 6), 
+           rep("Categorical", 13), 
+           rep("Continuous", 65), 
+           "Categorical(Target)"),
+  Details = c(
+    "A unqiue identifer assigned to each flow in the dataset.",
+    "The IP address of the device that originates the network traffic.",
+    "The port number on the source device from which the network traffic is sent.",
+    "The IP address of the device that received the network traffic.",
+    "The port number on the destination device that is used to receive the network traffic.",
+    "The time stamp at which the network flow occurred.",
+    "Denotes the protocol used, with three levels; 0, 6 and 17",
+    "The number of packets with FIN (Finish) flag, which signals the termination of a connection, with two levels, 1 and 0.",
+    "The number of packets with SYN (Synchronize) flag, used to initiate a TCP connection, with two levels, 1 and 0.",
+    "The number of packets with RST (Reset) flag, used to abruptly terminate a connection, with two levels, 1 and 0.",
+    "The number of packets with PSH (Push) flag, which tells the receiver to process data immediately rather than buffering it, with two levels, 1 and 0.",
+    "The number of packets with ACK (Acknowledgment) flag, which confirms the receipt data, with two levels, 1 and 0.",
+    "The number of packets with URG (Urgent) flag, indicating that certain data should be processed immediately, with two levels, 1 and 0.",
+    "Will be renamed to correct name : CWR (Congestion window reduced) flag, used in TCP congestion control to signal a reduced congestion window, with two levels, 1 and 0.",
+    "The number of packets with ECE (Explicit Congestion Notification Eco) flag, indicates network congestion, with two levels, 1 and 0.",
+    "Number of time the PSH (Push) flag was set in packets travelling in the forward direction, with two levels, 1 and 0.",
+    "Number of time the PSH (Push) flag was set in packets travelling in the backward direction, with two levels, 1 and 0.",
+    "Number of time the URG (Urgent) flag was set in packets travelling in the forward direction, with two levels, 1 and 0.",
+    "Number of time the URG (Urgent) flag was set in packets travelling in the forward direction, with two levels, 1 and 0.",
+    "The duration of the flow in microseconds",
+    "The total packets in the forward direction",
+    "The total packets in the backward direction",
+    "The total size of a packet in the forward direction",
+    "The total size of a packet in the backward direction",
+    "The maximum size of a packet in the forward direction.",
+    "The minimum size of a packet in the forward direction.",
+    "The mean size of a packet in the forward direction.",
+    "The standard deviation size of a packet in the forward direction.",
+    "The maximum size of a packet in the backward direction.",
+    "The minimum size of a packet in the backward direction.",
+    "The mean size of a packet in the backward direction.",
+    "The standard deviation size of a packet in the backward direction.",
+    "The number of flow bytes per second.",
+    "The number of flow packets per second.",
+    "The average inter-arrival time between packets within a flow.",
+    "The standard deviation inter-arrival time between packets within a flow.",
+    "The maximum inter-arrival time between packets within a flow.",
+    "The minimum inter-arrival time between packets within a flow.",
+    "The total inter-arrival time between packets sent in the forward direction.",
+    "The average inter-arrival time between packets sent in the forward direction.",
+    "The standard deviation inter-arrival time between packets sent in the forward direction.",
+    "The maximum inter-arrival time between packets sent in the forward direction.",
+    "The minimum inter-arrival time between packets sent in the forward direction.",
+    "The total inter-arrival time between packets sent in the forward direction.",
+    "The average inter-arrival time between packets sent in the forward direction.",
+    "The standard deviation inter-arrival time between packets sent in the forward. direction.",
+    "The maximum inter-arrival time between packets sent in the forward direction.",
+    "The minimum inter-arrival time between packets sent in the forward direction.",
+    "The total bytes used for headers in the forward direction.",
+    "The total bytes used for headers in the backward direction.",
+    "Number of forward packets transmitted per second.",
+    "Number of backward packets transmitted per second.",
+    "The minimum length of a packet.",
+    "The maximum length of a packet.",
+    "The average length of a packet.",
+    "The standard deviation length of a packet.",
+    "The variance length of a packet.",
+    "Download and upload ratio.",
+    "The average size of a packet.",
+    "The average size of data segments in the forward direction.",
+    "The average size of data segments in the backward direction.",
+    "Length of a packet header in the forward direction.",
+    "Average number of bulk bytes rate in the forward direction.",
+    "Average number of bulk packets rate in the forward direction.",
+    "Average number of bulk rate in the forward direction.",
+    "Average number of bulk bytes rate in the backward direction.",
+    "Average number of bulk packets rate in the backward direction.",
+    "Average number of bulk rate in the backward direction.",
+    "The average number of packets in a sub flow in the forward direction.",
+    "The average number of bytes in a sub flow in the forward direction.",
+    "The average number of packets in a sub flow in the backward direction.",
+    "The average number of bytes in a sub flow in the backward direction.",
+    "The total number of bytes sent in initial window in the forward direction.",
+    "The total number of bytes sent in initial window in the backward direction.",
+    "Actual number of packets sent in the forward direction.",
+    "Minimum size of the data segment sent in the forward direction.",
+    "The average time a flow was active before becoming idle.",
+    "The standard deviation time a flow was active before becoming idle.",
+    "The maximum time a flow was active before becoming idle.",
+    "The minimum time a flow was active before becoming idle.",
+    "The average time a flow was idle before becoming active.",
+    "The standard deviation time a flow was idle before becoming active.",
+    "The maximum time a flow was idle before becoming active.",
+    "The minimum time a flow was idle before becoming active.",
+    "BENIGN: Normal legitimate network traffic | DDoS: Malicious network traffic")
+)
+
+# defining table 
+kable(data, 
+      caption = "Appendix 1.1: CIC-DDoS2019 Dataset Attributes Details",
+      col.names = c("Variable", "Type", "Details"),
+      format = "latex",
+      booktabs = TRUE) %>%
+  kable_styling(latex_options = c("striped", "scale_down"),position = "center")
+```
+
+\newpage
+
+## **Appendix 1.2: R-Code**
+
+```{r, eval = FALSE, echo = TRUE}
+# --- loading libraries 
+library(tidyverse) # for extra functions 
+library(janitor) # for column name cleaning 
+library(viridis) # for color palettes 
+library(ggcorrplot)# for correlation plot 
+library(ggnewscale) # for extra plot functions 
+library(car) # for VIF function 
+library(scales) # for extra plot functions 
+library(gridExtra) # extra plot functions (grid functions)
+library(grid) # extra plot functions (grids)
+library(kableExtra) # for tables fuctions
+```
+
+```{r, eval = FALSE, echo = TRUE}
+# ---- loading data 
+DDoS_dataset <- read_csv("Data/Friday-WorkingHours-Afternoon-DDos.pcap_ISCX.csv") %>% clean_names()
+```
+
+```{r, eval = FALSE, echo = TRUE}
+# recode label variable to 1 and 0.
+DDoS_dataset <- DDoS_dataset %>%
+  mutate(label = ifelse(label %in% c("DDoS", "BENIGN"),
+                        dplyr::recode(label, "DDoS" = 1, "BENIGN" = 0),
+                        label))
+
+# converting several variables to factor 
+DDoS_dataset <- DDoS_dataset %>%
+  mutate(
+    label = as.factor(label),
+    protocol = as.factor(protocol),
+    fwd_psh_flags = as.factor(fwd_psh_flags),
+    bwd_psh_flags = as.factor(bwd_psh_flags),
+    fwd_urg_flags = as.factor(fwd_urg_flags),
+    bwd_urg_flags = as.factor(bwd_urg_flags),
+    fin_flag_count = as.factor(fin_flag_count),
+    syn_flag_count = as.factor(syn_flag_count),
+    rst_flag_count = as.factor(rst_flag_count),
+    psh_flag_count = as.factor(psh_flag_count),
+    ack_flag_count = as.factor(ack_flag_count),
+    urg_flag_count = as.factor(urg_flag_count),
+    cwe_flag_count = as.factor(cwe_flag_count),
+    ece_flag_count = as.factor(ece_flag_count),
+    flow_packets_s = as.numeric(flow_packets_s),
+    flow_bytes_s = as.numeric(flow_bytes_s)
+  )
+
+DDoS_dataset <- DDoS_dataset %>%
+  filter(is.finite(as.numeric(as.character(flow_packets_s))) & 
+         is.finite(as.numeric(as.character(flow_bytes_s))))
+
+# --- check for null values 
+null_value <- sum(is.na(DDoS_dataset))
+```
+
+```{r, eval = FALSE, echo = TRUE}
+# contingency table for lable and psh flag count 
+psh_flag <- table(DDoS_dataset$psh_flag_count, DDoS_dataset$label)
+
+# Perform Chi-Squared test
+chisq.test(psh_flag)
+
+# contingency table for lable and ack flag count 
+ack_flag <- table(DDoS_dataset$ack_flag_count, DDoS_dataset$label)
+
+# Perform Chi-Squared test
+chisq.test(psh_flag)
+```
+
+```{r, eval = FALSE, echo = TRUE}
+# Define the plots for syn_flag_count
+plot1 <- ggplot(DDoS_dataset, aes(x = as.factor(syn_flag_count), fill = as.factor(label))) +    
+  geom_bar(stat = "count", position = "dodge", alpha = 0.7) +
+  labs(x = "Syn Flag Count", y = "Count", fill = "Label") +
+  theme_minimal() +
+  scale_fill_manual(values = c("blue", "red")) +
+  scale_y_continuous(labels = label_comma()) +  
+  theme(legend.position = "none", axis.title.x = element_text(size = 9))
+
+# Define the plots for rst_flag_count
+plot2 <- ggplot(DDoS_dataset, aes(x = as.factor(rst_flag_count), fill = as.factor(label))) +    
+  geom_bar(stat = "count", position = "dodge", alpha = 0.7) +
+  labs(x = "RST Flag Count", y = "Count", fill = "Label") +
+  theme_minimal() +
+  scale_fill_manual(values = c("blue", "red")) +
+  scale_y_continuous(labels = label_comma()) +  
+  theme(legend.position = "none", axis.title.x = element_text(size = 9))
+
+# Define the plots for psh_flag_count
+plot3 <- ggplot(DDoS_dataset, aes(x = as.factor(psh_flag_count), fill = as.factor(label))) +    
+  geom_bar(stat = "count", position = "dodge", alpha = 0.7) +
+  labs(x = "PSH Flag Count", y = "Count", fill = "Label") +
+  theme_minimal() +
+  scale_fill_manual(values = c("blue", "red")) +
+  scale_y_continuous(labels = label_comma()) +  
+  theme(legend.position = "none", axis.title.x = element_text(size = 9))
+
+# Define the plots for ack_flag_count
+plot4 <- ggplot(DDoS_dataset, aes(x = as.factor(ack_flag_count), fill = as.factor(label))) +    
+  geom_bar(stat = "count", position = "dodge", alpha = 0.7) +
+  labs(x = "ACK Flag Count", y = "Count", fill = "Label") +
+  theme_minimal() +
+  scale_fill_manual(values = c("blue", "red")) +
+  scale_y_continuous(labels = label_comma()) +  
+  theme(legend.position = "none", axis.title.x = element_text(size = 9))
+
+# Define the plots for urg_flag_count
+plot5 <- ggplot(DDoS_dataset, aes(x = as.factor(urg_flag_count), fill = as.factor(label))) +    
+  geom_bar(stat = "count", position = "dodge", alpha = 0.7) +
+  labs(x = "URG Flag Count", y = "Count", fill = "Label") +
+  theme_minimal() +
+  scale_fill_manual(values = c("blue", "red")) +
+  scale_y_continuous(labels = label_comma()) +  
+  theme(legend.position = "none", axis.title.x = element_text(size = 9))
+
+# Define the plots for cwe_flag_count
+plot6 <- ggplot(DDoS_dataset, aes(x = as.factor(cwe_flag_count), fill = as.factor(label))) +    
+  geom_bar(stat = "count", position = "dodge", alpha = 0.7) +
+  labs(x = "CWE Flag Count", y = "Count", fill = "Label") +
+  theme_minimal() +
+  scale_fill_manual(values = c("blue", "red")) +
+  scale_y_continuous(labels = label_comma()) +  
+  theme(legend.position = "none", axis.title.x = element_text(size = 9))
+
+# Define the plots for ece_flag_count
+plot7 <- ggplot(DDoS_dataset, aes(x = as.factor(ece_flag_count), fill = as.factor(label))) +    
+  geom_bar(stat = "count", position = "dodge", alpha = 0.7) +
+  labs(x = "ECE Flag Count", y = "Count", fill = "Label") +
+  theme_minimal() +
+  scale_fill_manual(values = c("blue", "red")) +
+  scale_y_continuous(labels = label_comma()) +  
+  theme(legend.position = "none", axis.title.x = element_text(size = 9))
+
+
+plot8 <- ggplot(DDoS_dataset, aes(x = as.factor(fin_flag_count), fill = as.factor(label))) +    
+  geom_bar(stat = "count", position = "dodge", alpha = 0.7) +
+  labs(x = "FIN Flag Count", y = "Count", fill = "Label") +
+  theme_minimal() +
+  scale_fill_manual(values = c("blue", "red")) +
+  scale_y_continuous(labels = label_comma()) +  
+  theme(legend.position = "none", axis.title.x = element_text(size = 9))
+
+# Define the plots for dummyplot1 to extract legend 
+dummyplot1 <- ggplot(DDoS_dataset, aes(x = as.factor(syn_flag_count), 
+                                       fill = as.factor(label))) +
+  geom_bar(stat = "count", position = "dodge", alpha = 0.7) +
+  scale_fill_manual(values = c("0" = "blue", "1" = "red"),  
+                    labels = c("0" = "BENIGN", "1" = "DDoS"),
+                    guide = guide_legend(title = "Label", direction = "horizontal")) + 
+  theme_minimal() + 
+  guides(fill = guide_legend(title = "Label",
+                             title.position = "top", 
+                             title.hjust = 0.5)) +
+  theme(legend.position = "bottom")
+ 
+
+# function to extract the legend
+g_legend <- function(a.gplot) {
+  tmp <- ggplot_gtable(ggplot_build(a.gplot))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  tmp$grobs[[leg]]
+}
+legend <- g_legend(dummyplot1)
+```
+
+```{r, eval = FALSE, echo = TRUE}
+# Helper function to extract the legend
+g_legend <- function(a.gplot) {
+  tmp <- ggplot_gtable(ggplot_build(a.gplot))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  tmp$grobs[[leg]]
+}
+
+# Define the plots for fwd_psh_flags 
+plot_1 <- ggplot(DDoS_dataset, aes(x = fwd_psh_flags, fill = as.factor(label))) +   
+  geom_bar(stat = "count", position = "dodge", alpha = 0.7) +
+  labs(x = "FWD PSH Flags", y = "Count", fill = "Label") +
+  scale_fill_manual(values = c("blue", "red")) + 
+  theme_minimal() +
+  ggtitle("") +
+  scale_y_continuous(labels = label_comma()) +
+  theme(legend.position = "none")  # Remove the legend from this plot
+
+# Define the plots for bwd_psh_flags 
+plot_2 <- ggplot(DDoS_dataset, aes(x = bwd_psh_flags, fill = as.factor(label))) +   
+  geom_bar(stat = "count", position = "dodge", alpha = 0.7) +
+  labs(x = "BWD PSH Flags", y = "Count", fill = "Label") +
+  scale_fill_manual(values = c("blue", "red")) +
+  theme_minimal() +
+  ggtitle("") +
+  scale_y_continuous(labels = label_comma()) +
+  theme(legend.position = "none")
+
+# Define the plots for fwd_urg_flags 
+plot_3 <- ggplot(DDoS_dataset, aes(x = fwd_urg_flags, fill = as.factor(label))) +   
+  geom_bar(stat = "count", position = "dodge", alpha = 0.7) +
+  labs(x = "FWD URG Flags", y = "Count", fill = "Label") +
+  scale_fill_manual(values = c("blue", "red")) +
+  theme_minimal() +
+  ggtitle("") +
+  scale_y_continuous(labels = label_comma()) +
+  theme(legend.position = "none")
+
+# Define the plots for bwd_urg_flags 
+plot_4 <- ggplot(DDoS_dataset, aes(x = bwd_urg_flags, fill = as.factor(label))) +   
+  geom_bar(stat = "count", position = "dodge", alpha = 0.7) +
+  labs(x = "BWD URG Flags", y = "Count", fill = "Label") +
+  scale_fill_manual(values = c("blue", "red")) +
+  theme_minimal() +
+  ggtitle("") +
+  scale_y_continuous(labels = label_comma()) +
+  theme(legend.position = "none")
+
+# Define the plots for dummyplot2  
+dummyplot2 <- ggplot(DDoS_dataset, aes(x = fwd_psh_flags, fill = as.factor(label))) +
+  geom_bar(stat = "count", position = "dodge", alpha = 0.7) +
+  scale_fill_manual(values = c("0" = "blue", "1" = "red"), 
+                    labels = c("0" = "BENIGN", "1" = "DDoS"),
+                    guide = guide_legend(title = NULL)) +
+  theme_minimal() +
+  guides(fill = guide_legend(title = "Label", ncol = 2))
+
+# Extract the legend from the dummy plot
+legend <- g_legend(dummyplot2)
+```
+
+```{r, eval = FALSE, echo = TRUE}
+# function to check zero variability due to constant only zeros  
+check_zero_columns <- function(data) {
+  zero_cols <- sapply(data, function(col) all(col == 0, na.rm = TRUE))
+  return(names(data)[zero_cols])
+}
+
+# define the columns from the function 
+zero_columns <- check_zero_columns(DDoS_dataset)
+
+# Print columns that contain only zeros
+if (length(zero_columns) > 0) {
+  print(paste("Columns with only zeros:", paste(zero_columns, collapse = ", ")))
+} else {
+  print("No columns contain only zeros.")
+}
+```
+
+```{r, eval = FALSE, echo = TRUE}
+# dropping due to imbalance and zero variability issues
+# 17 total protocol, fin_flag_count, syn_flag_count urg_flag_count
+# ece_flag_count, rst_flag_count, cwe_flag_count, fwd_psh_flags, bwd_psh_flags
+# fwd_urg_flags, bwd_urg_flags, fwd_avg_bytes_bulk, fwd_avg_packets_bulk
+# fwd_avg_bulk_rate, bwd_avg_bytes_bulk, bwd_avg_bulk_rate, bwd_avg_packets_bulk 
+
+# --- remove unwanted variables 
+DDoS_dataset0 <- DDoS_dataset %>%
+  select(-flow_id, -source_ip, 
+         -source_port, -destination_ip, 
+         -destination_port, -timestamp,
+         -protocol, -syn_flag_count, 
+         -fin_flag_count, -urg_flag_count, 
+         -ece_flag_count, -rst_flag_count, 
+         -cwe_flag_count, -fwd_psh_flags, 
+         -bwd_psh_flags, -fwd_urg_flags, 
+         -bwd_urg_flags, -fwd_avg_bytes_bulk, 
+         -fwd_avg_packets_bulk, -fwd_avg_bulk_rate, 
+         -bwd_avg_bytes_bulk, -bwd_avg_bulk_rate, 
+         -bwd_avg_packets_bulk, -init_win_bytes_forward,
+         -init_win_bytes_backward)
+```
+
+```{r, eval = FALSE, echo = TRUE}
+print_summary <- function(data, var_name) {
+  cat("\n Summary Statistics of", var_name, "\n")
+  cat("-------------------------------------------------\n")
+  summary_output <- capture.output(summary(data))
+  cat(paste(summary_output, collapse = "\n"), "\n")
+}
+
+# Print summaries for selected variables
+print_summary(DDoS_dataset0$flow_duration, "Flow Duration")
+print_summary(DDoS_dataset0$flow_bytes_s, "Flow Bytes per Second")
+print_summary(DDoS_dataset0$flow_packets_s, "Flow Packets Per Second")
+print_summary(DDoS_dataset0$fwd_packets_s, "Foward Packets Per Second")
+print_summary(DDoS_dataset0$bwd_packets_s, "Backward Packets Per Second")
+```
+
+```{r, eval = FALSE, echo = TRUE}
+# Boxplot for flow_duration after log transformation
+box1 <- DDoS_dataset0 %>% 
+  filter(flow_duration != -1) %>% 
+  mutate(
+    Q5 = quantile(flow_duration, 0.05, na.rm = TRUE),
+    Q95 = quantile(flow_duration, 0.95, na.rm = TRUE)
+  ) %>% 
+  filter(flow_duration >= Q5 & flow_duration <= Q95) %>% 
+  ggplot(aes(x = factor(label), y = log(flow_duration), fill = factor(label))) +
+  geom_boxplot(alpha = 0.8) + 
+  labs(title = "",
+       x = "Label",
+       y = "Log(Flow Duration)") +
+  scale_fill_manual(values = c("0" = "blue", "1" = "red"),
+                    labels = c("0" = "BENIGN", "1" = "DDoS")) +
+  theme_minimal() + theme(legend.position = "none",
+        axis.title.y = element_text(size = 13))
+
+# Boxplot for flow_bytes_s after log transformation
+box2 <- DDoS_dataset0 %>% 
+  filter(flow_bytes_s > 0) %>% 
+  mutate(
+    Q5 = quantile(flow_bytes_s, 0.05, na.rm = TRUE),
+    Q95 = quantile(flow_bytes_s, 0.95, na.rm = TRUE)
+  ) %>% 
+  filter(flow_bytes_s >= Q5 & flow_bytes_s <= Q95) %>% 
+  ggplot(aes(x = factor(label), y = log(flow_bytes_s), fill = factor(label))) +
+  geom_boxplot(alpha = 0.8) + 
+  labs(title = "",
+       x = "Label",
+       y = "Log(Flow Bytes/s)") +
+  scale_fill_manual(values = c("0" = "blue", "1" = "red"),
+                    labels = c("0" = "BENIGN", "1" = "DDoS")) +
+  theme_minimal() + theme(legend.position = "none",
+        axis.title.y = element_text(size = 13))
+
+# Boxplot for flow_packets_s after log transformation
+box3 <- DDoS_dataset0 %>% 
+  filter(flow_packets_s > 0) %>% 
+  mutate(
+    Q5 = quantile(flow_packets_s, 0.05, na.rm = TRUE),
+    Q95 = quantile(flow_packets_s, 0.95, na.rm = TRUE)
+  ) %>% 
+  filter(flow_packets_s >= Q5 & flow_packets_s <= Q95) %>% 
+  ggplot(aes(x = factor(label), y = log(flow_packets_s), fill = factor(label))) +
+  geom_boxplot(alpha = 0.8) + 
+  labs(title = "",
+       x = "Label",
+       y = "Log(Flow Packets/s)") +
+  scale_fill_manual(values = c("0" = "blue", "1" = "red"),
+                    labels = c("0" = "BENIGN", "1" = "DDoS")) +
+  theme_minimal() + theme(legend.position = "none",
+        axis.title.y = element_text(size = 13))
+
+dummyplot0 <- DDoS_dataset0 %>% 
+  filter(flow_packets_s > 0) %>% 
+  mutate(
+    Q5 = quantile(flow_packets_s, 0.05, na.rm = TRUE),
+    Q95 = quantile(flow_packets_s, 0.95, na.rm = TRUE)
+  ) %>% 
+  filter(flow_packets_s >= Q5 & flow_packets_s <= Q95) %>% 
+  ggplot(aes(x = factor(label), y = log(flow_packets_s), fill = factor(label))) +
+  geom_boxplot(alpha = 0.8) + 
+  labs(title = "",
+       x = "Label",
+       y = "Log(flow_packets_s)") +
+  scale_fill_manual(values = c("0" = "blue", "1" = "red"),
+                    labels = c("0" = "BENIGN", "1" = "DDoS"),
+                    guide = guide_legend(title = "Label", 
+                                         title.position = "top", 
+                                         direction = "horizontal")) +
+  theme_minimal()
+
+legend0 <- g_legend(dummyplot0)
+```
+
+```{r, eval = FALSE, echo = TRUE}
+# Select only numeric variables + label
+cor_matrix <- DDoS_dataset0 %>%
+  mutate(label = as.numeric(as.factor(label)) - 1) %>%
+  select_if(is.numeric) %>%
+  select(1:29, label) %>%
+  cor()
+
+# Select full numeric variables + label
+cor_matrixFull <- DDoS_dataset0 %>%
+  mutate(label = as.numeric(as.factor(label)) - 1) %>%
+  select_if(is.numeric) %>%
+  cor()
+```
+
+```{r, eval = FALSE, echo = TRUE}
+# highlighting high correlated variables from the 30 variables  
+high_corr <- cor_matrix %>% 
+  as.data.frame() %>% 
+  mutate(row = rownames(cor_matrix)) %>%
+  gather(key = "variable", value = "correlation", -row) %>%
+  filter(abs(correlation) >= 0.9 & correlation != 1)
+
+# highlighting high correlated variables from the full dataset
+high_corrFull <- cor_matrixFull %>% 
+  as.data.frame() %>% 
+  mutate(row = rownames(cor_matrixFull)) %>%
+  gather(key = "variable", value = "correlation", -row) %>%
+  filter(abs(correlation) >= 0.9 & correlation != 1)
+```
+
+```{r, eval = FALSE, echo = TRUE}
+# Defining summary table containing data summary 
+summary_table <- data.frame(
+  c("Total number of records:", 
+    "Total number of Variables (columns):", 
+    "Total number of Continuous variables:", 
+    "Total number of Categorical variables:", 
+    "Instances of BENIGN (class 0):", 
+    "Instances of DDoS (class 1):"),
+  c("225,745","85","65","13","97,718","128,027")
+)
+
+# print as a table using latex 
+kable(summary_table, format = "latex", booktabs = TRUE, col.names = NULL,
+      caption = "CIC-DDoS2019 Dataset Structure and Class Distribution \\label{tab:summary}"
+      ) %>%
+  kable_styling(latex_options = c("striped", "scale_down")) %>%
+  kable_styling(position = "center") 
+```
+
+```{r, eval = FALSE, echo = TRUE}
+# Table of label distribution
+kable(table(DDoS_dataset$label), format = "latex", 
+      caption = "Distribution of Attack Label \\label{tab:label_distribution}",
+      col.names = c("Label","Instances"), booktabs = TRUE) %>%
+  kable_styling(latex_options = c("striped", "scale_down"), position = "center")
+```
+
+```{r, eval = FALSE, echo = TRUE}
+# Table of label and protocol
+kable(table(DDoS_dataset$label, DDoS_dataset$protocol), format = "latex", 
+      caption = "Distribution of Label and Protocol \\label{tab:label_protocol}",
+      col.names = c("Label","Protocol: 0","Protocol: 6","Protocol: 17"), 
+      booktabs = TRUE) %>%
+  kable_styling(latex_options = c("striped", "scale_down"), position = "center")
+```
+
+```{r, eval = FALSE, echo = TRUE}
+# Print top portion of high correlation table
+head(high_corr) %>%
+  kable(format = "latex", 
+        caption = "Printed Head Portion of High Correlation Variables (|Correlation| >= 0.9) \\label{tab:high_corr}",
+        booktabs = TRUE) %>%
+  kable_styling(latex_options = c("striped", "scale_down"), position = "center")
+```
+
+```{r, eval = FALSE, echo = TRUE}
+# bar plot of target distribution  
+ggplot(DDoS_dataset, aes(x = as.factor(label))) +
+  geom_bar(aes(fill = as.factor(label)), color = "black", alpha = 0.8, linewidth = 0.3) +
+  labs(title = "Figure 1:  Distribution of DDoS Attack Labels", x = "", y = "Count") +
+  theme_minimal() +
+  scale_fill_manual(values = c("0" = "blue", "1" = "red"), 
+                    labels = c("0" = "BENIGN", "1" = "DDoS"),
+                    guide = guide_legend(title = NULL)) +
+  scale_y_continuous(labels = scales::comma)
+```
+
+```{r, eval = FALSE, echo = TRUE}
+# bar plot of target and protocol distribution
+ggplot(DDoS_dataset, aes(x = as.factor(protocol), fill = as.factor(label))) +
+  geom_bar(color = "black", alpha = 0.7, linewidth = 0.3) +
+  labs(title = "Figure 2: Distribution of DDoS Attack Labels by Protocol", x = "Protocol", y = "Count") +
+  theme_minimal() +
+  scale_fill_manual(values = c("0" = "blue", "1" = "red"), 
+                    labels = c("0" = "BENIGN", "1" = "DDoS"),
+                    guide = guide_legend(title = NULL)) +
+  scale_y_continuous(labels = scales::comma)
+
+# Issues protocol variable 
+# When "0", BENIGN is 54, while DDoS is 0. 
+# When "6", BENIGN is 64793, while DDoS is 128027. 
+# When "17", BENIGN is 32871, while DDoS is 0. 
+```
+
+```{r, eval = FALSE, echo = TRUE}
+# Using grid.arrange for plots for flag counts 
+grid.arrange(
+  arrangeGrob(plot1, plot2, plot3, plot4, plot5, plot6, plot7, plot8, ncol = 2),
+  legend,
+  ncol = 1,
+  heights = c(10, 1),
+  top = textGrob("Figure 3: Distribution of Flag Counts By Label", gp = gpar(fontsize = 10, fontface = "bold"))
+)
+```
+
+```{r, eval = FALSE, echo = TRUE}
+# Using grid.arrange for plotsgrid.arrange for flags 
+grid.arrange(
+  arrangeGrob(plot_1, plot_2, plot_3, plot_4,
+  ncol = 2,
+  top = textGrob("Figure 4: Distribution of PSH/URG Flags in the FWD & BWD", 
+                 gp = gpar(fontsize = 10, fontface = "bold")),
+  bottom = legend))
+```
+
+```{r, eval = FALSE, echo = TRUE}
+# Boxplots arranged with dummy legend
+grid.arrange(
+  box1, box2, box3,
+  ncol = 1,
+  top = textGrob("Figure 5: Boxplots of Selected Variables After Transformation", 
+                 gp = gpar(fontsize = 15, fontface = "bold")),
+  bottom = legend0 # Adjust the height of the legend to make it smaller
+)
+```
+
+```{r, eval = FALSE, echo = TRUE}
+# Using ggcorrplot to plot correlation matrix of subset 30 variables 
+ggcorrplot(cor_matrix, method = "square",
+           type = "full",
+           lab = TRUE,
+           lab_size = 1.8,
+           tl.srt = 50,  
+           tl.cex = 9,  
+           title = "Figure 6: Correlation Matrix Heat Map Of 30 Variables",
+           ggtheme = theme_gray(),
+           colors = c("blue", "lightgrey", "red"))
+```
+
+```{r, eval = FALSE, echo = TRUE}
+# scatter plot of flow_duration and flow_iat_max facet wrapped by label
+ggplot(DDoS_dataset, aes(x = flow_duration, y = flow_iat_max, color = factor(label))) +
+  geom_point(alpha=0.4, size =0.7) +  # Line plot
+  labs(title = "Figure 7:  Scatter Plot of Flow duration and Flow Iat Max by label",
+       subtitle = "Correlation: 0.92",
+       x = "Flow Duration",
+       y = "Flow IAT MAX") +
+  scale_color_manual(
+    values = c("0" = "blue", "1" = "red"),  
+    labels = c("0" = "BENIGN", "1" = "DDoS"),  
+    name = "Label") + 
+  guides(color = guide_legend(override.aes = list(size = 4))) + 
+  facet_wrap(~ label, nrow = length(unique(DDoS_dataset$label))) + 
+  scale_x_continuous(labels = scales::comma) + 
+  scale_y_continuous(labels = scales::comma) +
+  theme_minimal()
+```
+
+```{r, eval = FALSE, echo = TRUE}
+# scatter plot of flow_duration and fwd_iat_total facet wrapped by label
+ggplot(DDoS_dataset, aes(x = flow_duration, y = fwd_iat_total, color = factor(label))) +
+  geom_point(alpha=0.4, size =0.7) +  # Line plot
+  labs(title = "Figure 8:  Scatter Plot of Flow duration and Flow Iat Total by label",
+       subtitle = "Correlation: 0.99",
+       x = "Flow Duration",
+       y = "Flow IAT Total") +
+  scale_color_manual(
+    values = c("0" = "blue", "1" = "red"),  
+    labels = c("0" = "BENIGN", "1" = "DDoS"),  
+    name = "Label") +   
+  guides(color = guide_legend(override.aes = list(size = 4))) + 
+  facet_wrap(~ label, nrow = length(unique(DDoS_dataset$label))) + 
+  scale_x_continuous(labels = scales::comma) + 
+  scale_y_continuous(labels = scales::comma) +
+  theme_minimal()
+```
